@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentCheck business ticket case v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "task",
+    "context",
+    "request",
+    "initial_tickets",
+    "fault",
+    "expected",
+    "limits"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "type": "integer"
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,100}$"
+    },
+    "task": {
+      "$ref": "#/$defs/text"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tenant_id",
+        "operation_id"
+      ],
+      "properties": {
+        "tenant_id": {
+          "$ref": "#/$defs/id"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "request": {
+      "$ref": "#/$defs/request"
+    },
+    "initial_tickets": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/ticket"
+      }
+    },
+    "fault": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tool",
+            "point",
+            "occurrence"
+          ],
+          "properties": {
+            "kind": {
+              "const": "F1"
+            },
+            "tool": {
+              "const": "create_ticket"
+            },
+            "point": {
+              "const": "after_commit_before_result"
+            },
+            "occurrence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "max_injections": {
+              "const": 1,
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "tool",
+            "point",
+            "occurrence",
+            "max_injections"
+          ],
+          "properties": {
+            "kind": {
+              "const": "F2"
+            },
+            "tool": {
+              "const": "create_ticket"
+            },
+            "point": {
+              "const": "before_service"
+            },
+            "occurrence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "max_injections": {
+              "enum": [
+                1,
+                null
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "tool",
+            "point",
+            "occurrence",
+            "max_injections"
+          ],
+          "properties": {
+            "kind": {
+              "const": "F3"
+            },
+            "tool": {
+              "const": "create_ticket"
+            },
+            "point": {
+              "const": "before_service"
+            },
+            "occurrence": {
+              "const": 1,
+              "type": "integer"
+            },
+            "max_injections": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tool",
+            "point",
+            "occurrence",
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "missing_id"
+            },
+            "tool": {
+              "const": "create_ticket"
+            },
+            "point": {
+              "const": "after_commit_before_result"
+            },
+            "occurrence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "max_injections": {
+              "const": 1,
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ticket_count_for_operation",
+        "customer_id",
+        "device_id",
+        "description",
+        "status",
+        "client_status"
+      ],
+      "properties": {
+        "ticket_count_for_operation": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "customer_id": {
+          "$ref": "#/$defs/id"
+        },
+        "device_id": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "status": {
+          "const": "open"
+        },
+        "client_status": {
+          "enum": [
+            "completed",
+            "blocked",
+            "needs_verification"
+          ]
+        },
+        "client_reason": {
+          "enum": [
+            "permission_denied",
+            "outcome_unknown",
+            "temporarily_unavailable",
+            "idempotency_conflict",
+            "invalid_tool_result"
+          ]
+        },
+        "returned_id_policy": {
+          "enum": [
+            "supported",
+            "null"
+          ]
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tool_calls"
+      ],
+      "properties": {
+        "max_tool_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "max_client_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "max_model_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "model_loop_timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 300
+        },
+        "request_timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 300
+        },
+        "max_output_tokens_per_model_call": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      }
+    },
+    "scenario": {
+      "enum": [
+        "retry",
+        "replay",
+        "query_after_unknown",
+        "conflict",
+        "tenant_isolation",
+        "distinct_operations",
+        "malformed_result",
+        "concurrent"
+      ]
+    },
+    "secondary_context": {
+      "$ref": "#/properties/context"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "\\S"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "\\S"
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "customer_id",
+        "device_id",
+        "description"
+      ],
+      "properties": {
+        "customer_id": {
+          "$ref": "#/$defs/id"
+        },
+        "device_id": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "ticket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ticket_id",
+        "tenant_id",
+        "operation_id",
+        "customer_id",
+        "device_id",
+        "description",
+        "status"
+      ],
+      "properties": {
+        "ticket_id": {
+          "$ref": "#/$defs/id"
+        },
+        "tenant_id": {
+          "$ref": "#/$defs/id"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/id"
+        },
+        "customer_id": {
+          "$ref": "#/$defs/id"
+        },
+        "device_id": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "status": {
+          "const": "open"
+        }
+      }
+    }
+  }
+}

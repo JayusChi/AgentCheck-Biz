@@ -74,8 +74,10 @@ class OpenAICompatibleClient(LLMClient):
         model: str,
         api_key: str | None = None,
         base_url: str | None = None,
+        extra_body: dict | None = None,
     ) -> None:
         self.model = model
+        self.extra_body = extra_body
         self.api_key = (
             api_key
             or os.environ.get("LLAMA_API_KEY")
@@ -106,6 +108,7 @@ class OpenAICompatibleClient(LLMClient):
                 {"role": "user", "content": user_prompt},
             ],
             temperature=temperature,
+            **({"extra_body": self.extra_body} if self.extra_body else {}),
         )
         content = response.choices[0].message.content or ""
         usage = getattr(response, "usage", None)
@@ -221,6 +224,17 @@ def create_llm_client(
     base_url: str | None = None,
 ) -> LLMClient:
     provider_lower = provider.lower()
+    if provider_lower == "bailian":
+        from pipeline.bailian import bailian_connection
+
+        if not api_key or not base_url:
+            configured_key, configured_url = bailian_connection()
+            api_key = api_key or configured_key
+            base_url = base_url or configured_url
+        return OpenAICompatibleClient(
+            model=model, api_key=api_key, base_url=base_url,
+            extra_body={"enable_thinking": False},
+        )
     if provider_lower == "openai":
         return OpenAIClient(model=model, api_key=api_key)
     if provider_lower == "anthropic":
@@ -236,6 +250,8 @@ def infer_llm_provider(model: str, provider: str | None = None) -> str:
     if provider:
         return provider.lower()
     model_lower = model.lower()
+    if model_lower.startswith("qwen"):
+        return "bailian"
     if model_lower.startswith("claude"):
         return "anthropic"
     if "deepseek" in model_lower:

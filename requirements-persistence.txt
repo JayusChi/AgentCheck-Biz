@@ -1,0 +1,7 @@
+# D26 additive lock; install after requirements-acceptance.txt.
+# Existing LangGraph 1.2.11 and checkpoint 4.2.0 are retained.
+langgraph-checkpoint-postgres==3.1.2
+psycopg==3.3.5
+psycopg-binary==3.3.5
+psycopg-pool==3.3.1
+tzdata==2026.3

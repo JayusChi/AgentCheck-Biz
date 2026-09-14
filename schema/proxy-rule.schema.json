@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentCheck network fault rule v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "rule_id", "run_id", "tool", "request_numbers", "phase", "action", "max_triggers", "delay_ms"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "rule_id": {"type": "string", "pattern": "^[a-zA-Z0-9_-]{1,64}$"},
+    "run_id": {"type": "string", "minLength": 1, "maxLength": 150},
+    "tool": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+    "request_numbers": {"type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true, "items": {"type": "integer", "minimum": 1, "maximum": 100}},
+    "phase": {"enum": ["before_forward", "after_upstream_response"]},
+    "action": {"enum": ["reject", "delay", "drop"]},
+    "max_triggers": {"type": "integer", "minimum": 1, "maximum": 20},
+    "delay_ms": {"type": "integer", "minimum": 0, "maximum": 10000}
+  },
+  "allOf": [
+    {"if": {"properties": {"action": {"const": "reject"}}}, "then": {"properties": {"phase": {"const": "before_forward"}, "delay_ms": {"const": 0}}}},
+    {"if": {"properties": {"action": {"const": "drop"}}}, "then": {"properties": {"phase": {"const": "after_upstream_response"}, "delay_ms": {"const": 0}}}},
+    {"if": {"properties": {"action": {"const": "delay"}}}, "then": {"properties": {"phase": {"const": "after_upstream_response"}, "delay_ms": {"minimum": 1}}}}
+  ]
+}

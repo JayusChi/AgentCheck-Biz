@@ -1,0 +1,1 @@
+{"schema_version":2,"rule_id":"D22_confirmed_loss","run_id":"$run_id","tool":"create_ticket","request_numbers":[1],"phase":"after_independent_confirmation","action":"drop","max_triggers":1,"delay_ms":0}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getFaultActionLabel } from "../lib/displayText";
 import type { TrajectoryStepDef } from "../types";
 
 interface TrajectoryGraphProps {
@@ -14,13 +15,13 @@ const PREVIEW_LIMIT = 180;
 export function getTrajectoryStepLabel(step: TrajectoryStepDef): string {
   switch (step.step_type) {
     case "llm_generation":
-      return "Reasoning step";
+      return "推理步骤";
     case "tool_call":
-      return "Tool call";
+      return "工具调用";
     case "tool_response":
-      return "Tool response";
+      return "工具响应";
     case "final_answer":
-      return "Final answer";
+      return "最终回答";
     default:
       return step.step_type;
   }
@@ -40,7 +41,7 @@ export function getTrajectoryStepPreview(step: TrajectoryStepDef): string {
         data.returned_response ?? data.clean_response;
       const recovered =
         typeof returned === "string" ? returned : JSON.stringify(returned);
-      return `Injected fault: ${injected}\nRecovered response: ${recovered}`;
+      return `注入的故障：${injected}\n恢复后的响应：${recovered}`;
     }
     const shown = data.injected_response ?? data.clean_response;
     return typeof shown === "string" ? shown : JSON.stringify(shown);
@@ -55,9 +56,9 @@ function isInjectedResponse(step: TrajectoryStepDef): boolean {
 
 function getFaultTag(step: TrajectoryStepDef): string {
   if (step.data.mitigation_recovered) {
-    return `recovered from ${String(step.data.fault ?? "fault")}`;
+    return `已从故障中恢复：${getFaultActionLabel(step.data.fault)}`;
   }
-  return String(step.data.fault ?? "fault");
+  return getFaultActionLabel(step.data.fault);
 }
 
 interface TrajectoryNodeCardProps {
@@ -108,10 +109,10 @@ export function TrajectoryNodeCard({
         aria-label={`${getTrajectoryStepLabel(step)}: ${preview}`}
       >
         {isDivergenceNode && (
-          <span className="trajectory-divergence-flag">Trajectory diverges here</span>
+          <span className="trajectory-divergence-flag">执行轨迹从此处分歧</span>
         )}
         <span className="trajectory-node-header">
-          <span className="trajectory-node-step-index">Step {step.index + 1}</span>
+          <span className="trajectory-node-step-index">第 {step.index + 1} 步</span>
           {stepMeta && <span className="trajectory-node-step-meta">{stepMeta}</span>}
         </span>
         <span className="trajectory-node-label">{getTrajectoryStepLabel(step)}</span>
@@ -126,7 +127,7 @@ export function TrajectoryNodeCard({
           className="trajectory-node-show-more"
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? "show less" : "show more"}
+          {expanded ? "收起" : "展开全文"}
         </button>
       )}
     </div>

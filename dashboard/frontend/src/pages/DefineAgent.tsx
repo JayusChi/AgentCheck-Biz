@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatUiError } from "../lib/displayText";
 import { api } from "../api";
 import { DEMO_MCP_TOOLS, DemoMcpToolsDialog } from "../components/DemoMcpToolsDialog";
 import { TargetToolField } from "../components/TargetToolField";
@@ -12,6 +13,9 @@ import { DEFAULT_DEMO_TASK } from "../lib/taskGuidance";
 import type { ComparisonResponse, ExampleSummary } from "../types";
 
 const MODEL_OPTIONS = [
+  { value: "qwen3.7-max", label: "通义千问 3.7 Max（阿里云百炼）" },
+  { value: "qwen3.8-max", label: "通义千问 3.8 Max（阿里云百炼）" },
+  { value: "qwen3.7-max-2026-06-08", label: "通义千问 3.7 Max · 2026-06-08（阿里云百炼）" },
   { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
   { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
   { value: "meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
@@ -28,8 +32,8 @@ export function DefineAgent() {
   const [mode, setMode] = useState<"connect" | "explore">("connect");
   const [mcpSource, setMcpSource] = useState<"builtin" | "custom">("builtin");
   const [mcpServerUrl, setMcpServerUrl] = useState(defaultDemoMcpUrl);
-  const [model, setModel] = useState("meta-llama/llama-3.3-70b-instruct");
-  const [harness, setHarness] = useState<"react" | "native_tool_calling">("react");
+  const [model, setModel] = useState("qwen3.7-max");
+  const [harness, setHarness] = useState<"react" | "native_tool_calling">("native_tool_calling");
   const [task, setTask] = useState(
     "Open incident brief-11 and explain what caused the outage and whether it is still active."
   );
@@ -74,7 +78,7 @@ export function DefineAgent() {
   useEffect(() => {
     api.listExamples()
       .then(setExamples)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load form metadata."));
+      .catch((err) => setError(err instanceof Error ? formatUiError(err) : "加载配置数据失败。"));
   }, []);
 
   const filteredExamples = useMemo(() => {
@@ -84,6 +88,7 @@ export function DefineAgent() {
       (ex) =>
         ex.example_id.toLowerCase().includes(q) ||
         ex.fault_type.toLowerCase().includes(q) ||
+        getFaultTypeName(ex.fault_type).toLowerCase().includes(q) ||
         ex.task.toLowerCase().includes(q)
     );
   }, [examples, exampleSearch]);
@@ -106,7 +111,7 @@ export function DefineAgent() {
     setComparison(null);
     setMode("connect");
     if (!effectiveMcpUrl.trim() || !task.trim() || !targetToolId.trim()) {
-      setError("MCP server URL, task, and the tool to inject into are required.");
+      setError("请填写 MCP 服务器地址、任务内容和故障注入目标工具。");
       return;
     }
 
@@ -119,7 +124,7 @@ export function DefineAgent() {
       });
       setComparison(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Workbench run failed.");
+      setError(err instanceof Error ? formatUiError(err) : "对比执行失败。");
     } finally {
       setRunning(false);
     }
@@ -134,7 +139,7 @@ export function DefineAgent() {
       const result = await api.exampleComparison(exampleId);
       setComparison(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load example.");
+      setError(err instanceof Error ? formatUiError(err) : "加载案例失败。");
     } finally {
       setLoadingExample(false);
     }
@@ -144,7 +149,7 @@ export function DefineAgent() {
     <div className="config-page">
       <div className="config-header">
         <span className="eyebrow">AgentCheck</span>
-        <h2>Reproduce and debug MCP agent failures</h2>
+        <h2>复现与调试 MCP 智能体故障</h2>
         {/* <p>
           Compare clean and faulted trajectories, inspect injected response diffs, review primary
           pass/fail checks, and re-run with mitigations.
@@ -156,9 +161,9 @@ export function DefineAgent() {
           i
         </span>
         <span className="read-first-banner-text">
-          <strong>Please read this first</strong> for the fastest way to see the demo work.
+          <strong>首次使用请先阅读</strong>，快速了解演示操作。
         </span>
-        <span className="read-first-banner-cta">Open</span>
+        <span className="read-first-banner-cta">查看</span>
       </button>
 
       <div className="config-tabs">
@@ -167,14 +172,14 @@ export function DefineAgent() {
           className={`config-inline-action ${mode === "connect" ? "active" : ""}`}
           onClick={() => setMode("connect")}
         >
-          Connect to an MCP server
+          连接 MCP 服务器
         </button>
         <button
           type="button"
           className={`config-inline-action ${mode === "explore" ? "active" : ""}`}
           onClick={() => setMode("explore")}
         >
-          Browse examples
+          浏览预置案例
         </button>
       </div>
 
@@ -183,10 +188,9 @@ export function DefineAgent() {
           <div className="config-panel-scroll">
             {mode === "connect" ? (
               <>
-                <h3 className="config-card-title">Configuration</h3>
+                <h3 className="config-card-title">运行配置</h3>
                 <p className="config-card-desc" style={{ marginBottom: "1rem" }}>
-                  Use the built-in demo MCP or connect your own server, then choose a model,
-                  execution style, task, fault type, injection target, and call number.
+                  使用内置演示 MCP 或连接自己的服务器，然后选择模型、执行方式、任务、故障类型、目标工具和注入次数。
                 </p>
 
                 <aside className="injection-prerequisite" role="note">
@@ -194,47 +198,45 @@ export function DefineAgent() {
                     !
                   </span>
                   <p className="injection-prerequisite-text">
-                    <strong>Select a tool that is relevant to the task.</strong> Fault injection
-                    works only if the agent needs to use that tool to do the task. If the task
-                    does not use that tool, no fault is injected.
+                    <strong>请选择任务中会用到的工具。</strong> 只有智能体实际调用该工具时，故障注入才会生效。任务未使用该工具时，不会注入故障。
                   </p>
                 </aside>
 
                 <div className="form-field">
-                  <label>MCP server</label>
+                  <label>MCP 服务器</label>
                   <div className="config-tabs mcp-source-tabs">
                     <button
                       type="button"
                       className={`config-inline-action ${mcpSource === "builtin" ? "active" : ""}`}
                       onClick={() => handleMcpSourceChange("builtin")}
                     >
-                      AgentCheck demo MCP
+                      内置演示 MCP
                     </button>
                     <button
                       type="button"
                       className={`config-inline-action ${mcpSource === "custom" ? "active" : ""}`}
                       onClick={() => handleMcpSourceChange("custom")}
                     >
-                      Custom MCP server
+                      自定义 MCP 服务器
                     </button>
                   </div>
                 </div>
 
                 {mcpSource === "builtin" ? (
                   <p className="config-footer-note mcp-source-hint">
-                    Click{" "}
+                    点击{" "}
                     <button
                       type="button"
                       className="inline-text-link"
                       onClick={() => setToolsDialogOpen(true)}
                     >
-                      here
+                      这里
                     </button>{" "}
-                    to see the available tools.
+                    查看可用工具。
                   </p>
                 ) : (
                   <div className="form-field">
-                    <label htmlFor="mcp-server-url">MCP server URL</label>
+                    <label htmlFor="mcp-server-url">MCP 服务器地址</label>
                     <input
                       id="mcp-server-url"
                       className="field-input"
@@ -247,7 +249,7 @@ export function DefineAgent() {
 
                 <div className="config-row config-row-two">
                   <div className="form-field">
-                    <label htmlFor="model">Model</label>
+                    <label htmlFor="model">模型</label>
                     <select
                       id="model"
                       className="field-select"
@@ -262,7 +264,7 @@ export function DefineAgent() {
                     </select>
                   </div>
                   <div className="form-field">
-                    <label htmlFor="harness">Execution style</label>
+                    <label htmlFor="harness">执行方式</label>
                     <select
                       id="harness"
                       className="field-select"
@@ -270,13 +272,13 @@ export function DefineAgent() {
                       onChange={(e) => setHarness(e.target.value as "react" | "native_tool_calling")}
                     >
                       <option value="react">ReAct</option>
-                      <option value="native_tool_calling">Native tool calling</option>
+                      <option value="native_tool_calling">原生工具调用（Native tool calling）</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="task">Task</label>
+                  <label htmlFor="task">任务</label>
                   <textarea
                     id="task"
                     className={`field-input field-textarea ${taskJustApplied ? "field-flash" : ""}`}
@@ -285,28 +287,28 @@ export function DefineAgent() {
                     onChange={(e) => setTask(e.target.value)}
                     placeholder={
                       mcpSource === "builtin"
-                        ? "Describe what the agent should find or report using the demo tools…"
-                        : "Describe the goal the agent should accomplish with your MCP tools…"
+                        ? "描述智能体需要使用演示工具查找或报告什么…"
+                        : "描述智能体需要使用你的 MCP 工具完成什么目标…"
                     }
                   />
                   <p className="config-footer-note">
-                    Click{" "}
+                    点击{" "}
                     <button
                       type="button"
                       className="inline-text-link"
                       onClick={() => setTaskGuidanceDialogOpen(true)}
                     >
-                      here
+                      这里
                     </button>{" "}
                     {mcpSource === "builtin"
-                      ? "for example tasks paired with the right demo tool."
-                      : "for guidance on writing a task for your MCP server."}
+                      ? "查看示例任务及其对应的演示工具。"
+                      : "查看如何为自己的 MCP 服务器编写任务。"}
                   </p>
                 </div>
 
                 <div className="config-row">
                   <div className="form-field">
-                    <label htmlFor="fault-type">Fault type</label>
+                    <label htmlFor="fault-type">故障类型</label>
                     <select
                       id="fault-type"
                       className="field-select"
@@ -320,15 +322,15 @@ export function DefineAgent() {
                       ))}
                     </select>
                     <p className="config-footer-note">
-                      Click{" "}
+                      点击{" "}
                       <button
                         type="button"
                         className="inline-text-link"
                         onClick={() => setFaultTypesDialogOpen(true)}
                       >
-                        here
+                        这里
                       </button>{" "}
-                      to see what each fault type means.
+                      查看各类故障的含义。
                     </p>
                   </div>
                   <TargetToolField
@@ -339,23 +341,23 @@ export function DefineAgent() {
                     helperText={
                       mcpSource === "builtin" ? (
                         <>
-                          Click{" "}
+                          点击{" "}
                           <button
                             type="button"
                             className="inline-text-link"
                             onClick={() => setToolsDialogOpen(true)}
                           >
-                            here
+                            这里
                           </button>{" "}
-                          to see what each tool does.
+                          查看每个工具的用途。
                         </>
                       ) : (
-                        "Enter the name exactly as your MCP server exposes it."
+                        "请填写 MCP 服务器提供的准确工具名。"
                       )
                     }
                   />
                   <div className="form-field">
-                    <label htmlFor="occurrence">Inject on call #</label>
+                    <label htmlFor="occurrence">在第几次调用时注入</label>
                     <input
                       id="occurrence"
                       type="number"
@@ -365,20 +367,20 @@ export function DefineAgent() {
                       onChange={(e) => setInjectionOccurrence(Math.max(1, parseInt(e.target.value, 10) || 1))}
                     />
                     <p className="config-footer-note">
-                      Only this call is faulted (1 = first call).
+                      仅对指定的这一次调用注入故障（1 表示首次调用）。
                     </p>
                   </div>
                 </div>
               </>
             ) : (
               <>
-                <h3 className="config-card-title">Examples</h3>
+                <h3 className="config-card-title">预置案例</h3>
                 <p className="config-card-desc" style={{ marginBottom: "1rem" }}>
-                  Browse bundled benchmark examples.
+                  查看上游预计算案例；任务、工具响应和模型输出保留原文。
                 </p>
                 <input
                   className="field-input"
-                  placeholder="Search examples by id, fault type, or task..."
+                  placeholder="按案例 ID、故障类型或任务搜索…"
                   value={exampleSearch}
                   onChange={(e) => setExampleSearch(e.target.value)}
                 />
@@ -410,7 +412,7 @@ export function DefineAgent() {
                       </div>
                       <div className="example-card-footer">
                         <span className="example-card-hint">{example.model}</span>
-                        <span className="example-card-status">{isLoading ? "Loading…" : "View"}</span>
+                        <span className="example-card-status">{isLoading ? "加载中…" : "查看"}</span>
                       </div>
                     </div>
                     );
@@ -428,7 +430,7 @@ export function DefineAgent() {
                 disabled={running || !effectiveMcpUrl.trim()}
                 onClick={() => void handleRun()}
               >
-                {running ? "Running comparison..." : "Run comparison"}
+                {running ? "正在执行对比…" : "运行对比"}
               </button>
             )}
             {error && (
@@ -441,28 +443,28 @@ export function DefineAgent() {
 
         <section className="config-panel-right">
           {mode === "explore" && comparison && (
-            <span className="precomputed-badge precomputed-badge-standalone">Example</span>
+            <span className="precomputed-badge precomputed-badge-standalone">上游预计算示例 · 非本机实时调用</span>
           )}
           {running && (
-            <p className="empty-state">Running clean and faulted passes...</p>
+            <p className="empty-state">正在进行正常执行与故障执行…</p>
           )}
           {!running && !comparison && (
             <div className="workbench-placeholder">
               <div className="workbench-placeholder-head">
-                <h4>Ready to compare</h4>
+                <h4>准备开始对比</h4>
                 <p>
-                  Configure a run on the left, then compare trajectories here.
+                  在左侧配置运行或选择预置案例，在这里查看执行轨迹与结果。
                 </p>
               </div>
               <div className="workbench-placeholder-grid">
                 <div className="workbench-placeholder-column">
-                  <span className="workbench-placeholder-label">Clean run will appear here</span>
+                  <span className="workbench-placeholder-label">正常执行将显示在这里</span>
                   <div className="workbench-placeholder-node" />
                   <div className="workbench-placeholder-node" />
                   <div className="workbench-placeholder-node" />
                 </div>
                 <div className="workbench-placeholder-column">
-                  <span className="workbench-placeholder-label">Faulted run will appear here</span>
+                  <span className="workbench-placeholder-label">故障执行将显示在这里</span>
                   <div className="workbench-placeholder-node" />
                   <div className="workbench-placeholder-node is-faulted" />
                   <div className="workbench-placeholder-node" />

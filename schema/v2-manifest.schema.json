@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentcheck:v2:manifest",
+  "title": "AgentCheck fixed experiment manifest v2",
+  "description": "Nested values must also equal the registered source-bound profile. No user code, SQL or service addresses.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "evidence_version",
+    "manifest_id",
+    "source_sha256",
+    "execution",
+    "slots"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "agentcheck-manifest/2"
+    },
+    "evidence_version": {
+      "const": "agentcheck-evidence/2"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "execution": {
+      "type": "object",
+      "required": [
+        "parallel"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "parallel": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        }
+      }
+    },
+    "slots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": [
+          "slot_id",
+          "profile",
+          "engine",
+          "object",
+          "adapter",
+          "case",
+          "initial_state",
+          "fault",
+          "recovery",
+          "budget",
+          "expected"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "profile": {
+            "type": "string"
+          },
+          "engine": {
+            "enum": [
+              "network",
+              "continuity"
+            ]
+          },
+          "object": {
+            "type": "object",
+            "required": [
+              "kind",
+              "version"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "ticket",
+                  "gitea"
+                ]
+              },
+              "version": {
+                "type": "string"
+              }
+            }
+          },
+          "adapter": {
+            "type": "object",
+            "required": [
+              "version",
+              "protocol"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "version": {
+                "type": "string"
+              },
+              "protocol": {
+                "type": "string"
+              }
+            }
+          },
+          "case": {
+            "type": "object"
+          },
+          "initial_state": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "fault": {
+            "type": "object"
+          },
+          "recovery": {
+            "type": "object"
+          },
+          "budget": {
+            "type": "object",
+            "required": [
+              "model_limit",
+              "tool_limit",
+              "wall_seconds",
+              "slot_timeout_seconds"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "model_limit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "tool_limit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "wall_seconds": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "slot_timeout_seconds": {
+                "const": 240
+              }
+            }
+          },
+          "expected": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

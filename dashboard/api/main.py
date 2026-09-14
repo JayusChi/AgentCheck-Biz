@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from dashboard.api.business import create_business_router
+from dashboard.api.recovery import create_recovery_router
+from dashboard.api.capabilities import create_capabilities_router
 
 from dashboard.api.demo_mcp import router as demo_mcp_router
 from dashboard.api.workbench import router
@@ -55,6 +59,13 @@ app.add_middleware(
 
 app.include_router(demo_mcp_router)
 app.include_router(router)
+app.include_router(create_business_router())
+app.include_router(create_recovery_router())
+app.include_router(create_capabilities_router())
 
 if STATIC_DIR.exists():
+    @app.get("/business", include_in_schema=False)
+    def business_page():
+        return FileResponse(STATIC_DIR / "index.html")
+
     app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")

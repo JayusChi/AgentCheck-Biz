@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "case_id": "T08_payload_conflict",
+  "task": "使用已经用于无法开机工单的操作编号，提交屏幕损坏请求；应拒绝冲突并保留原工单",
+  "context": {
+    "tenant_id": "tenant-A",
+    "operation_id": "repair-001"
+  },
+  "request": {
+    "customer_id": "C001",
+    "device_id": "D001",
+    "description": "屏幕损坏"
+  },
+  "initial_tickets": [
+    {
+      "ticket_id": "T-unrelated",
+      "tenant_id": "tenant-B",
+      "operation_id": "repair-001",
+      "customer_id": "C999",
+      "device_id": "D999",
+      "description": "已有工单，保持不变",
+      "status": "open"
+    },
+    {
+      "ticket_id": "T-prior",
+      "tenant_id": "tenant-A",
+      "operation_id": "repair-001",
+      "customer_id": "C001",
+      "device_id": "D001",
+      "description": "无法开机",
+      "status": "open"
+    }
+  ],
+  "fault": null,
+  "expected": {
+    "ticket_count_for_operation": 1,
+    "customer_id": "C001",
+    "device_id": "D001",
+    "description": "无法开机",
+    "status": "open",
+    "client_status": "blocked",
+    "client_reason": "idempotency_conflict",
+    "returned_id_policy": "null"
+  },
+  "limits": {
+    "max_tool_calls": 6,
+    "max_client_attempts": 2
+  },
+  "scenario": "conflict"
+}

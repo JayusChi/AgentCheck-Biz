@@ -34,7 +34,7 @@ function TaskExampleRow({
             onClose();
           }}
         >
-          Use this task
+          使用此任务
         </button>
       </div>
       <p className="tools-dialog-item-desc">{example.task}</p>
@@ -71,14 +71,14 @@ export function TaskGuidanceDialog({ open, mcpSource, onClose, onSelectExample }
       <div className="tools-dialog-panel">
         <header className="tools-dialog-header">
           <div>
-            <h2 className="tools-dialog-title">Writing a task</h2>
+            <h2 className="tools-dialog-title">如何编写任务</h2>
             <p className="tools-dialog-subtitle">
               {isBuiltin
-                ? "The task tells the agent what to do with the demo server's incident-brief tools."
-                : "The task tells the agent what goal to pursue using your MCP server's tools."}
+                ? "任务用于说明智能体需要使用演示服务器的事件简报工具完成什么。"
+                : "任务用于说明智能体需要使用你的 MCP 工具完成什么目标。"}
             </p>
           </div>
-          <button type="button" className="tools-dialog-close" onClick={onClose} aria-label="Close">
+          <button type="button" className="tools-dialog-close" onClick={onClose} aria-label="关闭">
             ×
           </button>
         </header>
@@ -86,8 +86,7 @@ export function TaskGuidanceDialog({ open, mcpSource, onClose, onSelectExample }
           {isBuiltin ? (
             <>
               <p className="task-guidance-note">
-                The demo server includes one document: <strong>brief-11</strong> (Onboarding Incident
-                Brief 11). Pick an example below or edit the task field directly.
+                演示服务器内置一份文档：<strong>brief-11</strong>（用户接入故障简报 11）。可选择下面的任务，或直接编辑任务输入框。示例任务保留英文原文。
               </p>
               <ul className="fault-types-section-list">
                 {DEMO_TASK_EXAMPLES.map((example) => (

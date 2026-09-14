@@ -14,6 +14,8 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Any
 
+from pipeline.bailian import bailian_connection
+
 from agentcheck.agent_factory import AGENT_SPECS
 from agentcheck.agent_spec import AgentSpec, ToolSpec
 from agentcheck.agents import Agent, LangChainReActAgent, OpenAIToolCallingAgent
@@ -546,6 +548,9 @@ def _resolve_spec_runtime(spec: dict[str, Any], harness: str) -> tuple[str, str 
 
 def _infer_model_runtime(model: str, harness: str) -> tuple[str, str | None, str | None]:
     normalized = model.strip()
+    if normalized.lower().startswith("qwen"):
+        api_key, base_url = bailian_connection()
+        return "bailian", base_url, api_key
     matching_specs = [
         spec for spec in AGENT_SPECS.values() if spec.get("model") == normalized
     ]

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "case_id": "G01_create",
+  "operation_id": "issue-001",
+  "request": {
+    "title": "设备维修：无法开机",
+    "body": "客户 C001 / 设备 D001。请登记维修问题。"
+  },
+  "initial_issues": [],
+  "scenario": "create",
+  "expected": {
+    "count": 1,
+    "state": "open"
+  },
+  "limits": {
+    "max_tool_calls": 3,
+    "page_size": 2,
+    "max_pages": 10
+  }
+}
