@@ -25,6 +25,8 @@ jobs:
           node-version: '22.19.0'
       - name: Install frozen Python dependencies
         run: python -m pip install -r requirements-acceptance.txt -r requirements-persistence.txt
+      - name: Prepare pinned PostgreSQL for atomic budget tests
+        run: python scripts/fetch_postgres.py
       - name: Verify core and frontend
         run: python -X utf8 scripts/verify_v2.py --scope core --output artifacts/ci/windows
       - name: Preserve setup or interrupted verification verdict

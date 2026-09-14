@@ -36,6 +36,13 @@ class CITests(unittest.TestCase):
         self.assertNotIn('canary',json.dumps(result))
         self.assertEqual(result['observed'],dict(ticket_count=2))
 
+    def test_diagnostics_cannot_publish_exception_message_or_foreign_path(self):
+        self.report['steps'][0]['diagnostics']=[dict(type='RuntimeError',message='canary',frames=[
+            dict(path='secret/canary.py',line=2),dict(path='scripts/verify_v2.py',line=1,locals='canary')])]
+        result=projection(self.report)
+        self.assertNotIn('canary',json.dumps(result))
+        self.assertEqual(result['steps'][0]['diagnostics'][0]['frames'],[dict(path='scripts/verify_v2.py',line=1)])
+
     def test_failure_is_published_in_all_formats(self):
         self.report['status'] = self.report['steps'][0]['status'] = 'FAIL'
         public = self.root/'public'

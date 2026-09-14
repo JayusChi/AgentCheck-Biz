@@ -11,6 +11,9 @@ STATES = {'PASS', 'FAIL', 'ERROR', 'INCONCLUSIVE'}
 STEPS = {'environment-setup', 'configuration', 'dependencies', 'core-tests', 'frontend-install', 'frontend-build',
          'integration', 'source-bundle'}
 SAFE_NAMES = {'summary.json', 'report.md', 'junit.xml'}
+ERROR_TYPES = {'AssertionError','AttributeError','FileNotFoundError','ImportError','KeyError',
+               'ModuleNotFoundError','OSError','PermissionError','RuntimeError','TimeoutError',
+               'TypeError','ValueError','ExceptionGroup','OtherError'}
 FORBIDDEN = {'.git', '.env', '.venv', '.cache', 'node_modules', '__pycache__',
              'artifacts', 'output', 'results', 'tmp', '.tmp', 'dist', 'logs'}
 SECRET = re.compile(rb'(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-[A-Za-z0-9_-]{30,}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----)')
@@ -18,6 +21,21 @@ SECRET = re.compile(rb'(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def diagnostic(info):
+    """Only exception category and allowlisted source locations, never its message."""
+    root = Path(__file__).resolve().parents[2]
+    allowed = set(json.loads((root/'ci/source-files.json').read_text(encoding='utf8')))
+    kind, _, trace = info
+    frames = []
+    while trace:
+        path = Path(trace.tb_frame.f_code.co_filename).resolve()
+        if root in path.parents:
+            name = path.relative_to(root).as_posix()
+            if name in allowed: frames.append(dict(path=name,line=trace.tb_lineno))
+        trace = trace.tb_next
+    return dict(type=kind.__name__ if kind.__name__ in ERROR_TYPES else 'OtherError',frames=frames[-6:])
 
 
 def regular(root, relative):
@@ -87,6 +105,14 @@ def projection(report):
                 if type(row[key]) is not int:
                     raise ValueError('Invalid numeric verdict')
                 item[key] = row[key]
+        if 'diagnostics' in row:
+            allowed = set(json.loads((Path(__file__).resolve().parents[2]/'ci/source-files.json').read_text(encoding='utf8')))
+            item['diagnostics'] = []
+            for entry in row['diagnostics'][:10]:
+                if entry.get('type') not in ERROR_TYPES: continue
+                frames = [dict(path=f['path'],line=f['line']) for f in entry.get('frames',[])[:6]
+                    if f.get('path') in allowed and type(f.get('line')) is int and f['line']>0]
+                item['diagnostics'].append(dict(type=entry['type'],frames=frames))
         result['steps'].append(item)
     for key in ('source_sha256', 'bundle_sha256'):
         if key in report:

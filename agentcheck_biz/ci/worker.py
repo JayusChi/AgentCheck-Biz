@@ -47,14 +47,25 @@ def configuration():
 
 
 def core():
+    from .artifacts import diagnostic
+    class Result(unittest.TextTestResult):
+        def __init__(self,*args,**kwargs):
+            super().__init__(*args,**kwargs)
+            self.diagnostics=[]
+        def addError(self,test,err):
+            self.diagnostics.append(diagnostic(err))
+            super().addError(test,err)
+        def addFailure(self,test,err):
+            self.diagnostics.append(diagnostic(err))
+            super().addFailure(test,err)
     suite = unittest.TestSuite()
     suite.addTests(unittest.defaultTestLoader.discover(str(ROOT/'tests/business')))
     for name in CORE[1:]:
         suite.addTests(unittest.defaultTestLoader.loadTestsFromName(name))
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    result = unittest.TextTestRunner(verbosity=2,resultclass=Result).run(suite)
     passed = result.testsRun > 0 and result.wasSuccessful() and not result.skipped
     return dict(status='PASS' if passed else 'FAIL', tests=result.testsRun,
-                failures=len(result.failures), errors=len(result.errors), skipped=len(result.skipped))
+                failures=len(result.failures), errors=len(result.errors), skipped=len(result.skipped),diagnostics=result.diagnostics)
 
 
 def integration(directory):
@@ -133,8 +144,10 @@ def main():
             result = integration(directory)
     except Exception:
         import traceback
+        from .artifacts import diagnostic
+        detail = diagnostic(sys.exc_info())
         traceback.print_exc()
-        result = dict(status='ERROR')
+        result = dict(status='ERROR',diagnostics=[detail])
     (directory/'stage.json').write_text(json.dumps(result, indent=2),encoding='utf8')
     return {'PASS':0,'FAIL':1,'INCONCLUSIVE':2,'ERROR':3}[result['status']]
 

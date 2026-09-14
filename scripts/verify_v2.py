@@ -93,7 +93,7 @@ def main():
                 status = (stage_status(code,data) if name in {'configuration','core-tests','integration'}
                           else 'PASS' if code == 0 else 'ERROR')
                 step.update(status=status,exit_code=code)
-                step.update({k:data[k] for k in ('tests','failures','errors','skipped') if k in data})
+                step.update({k:data[k] for k in ('tests','failures','errors','skipped','diagnostics') if k in data})
                 if 'observed' in data: report['observed'] = data['observed']
             print(name+': '+step['status'],flush=True)
             publish(report,output/'public')
