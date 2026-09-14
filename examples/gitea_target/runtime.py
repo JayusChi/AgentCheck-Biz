@@ -104,6 +104,10 @@ ENABLED = false
         (self.directory / "gitconfig").write_text("[core]\n\tlongpaths = true\n", encoding="utf-8")
         self.child_env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=str(self.directory / "gitconfig"),
                               GIT_CEILING_DIRECTORIES=str(self.directory), USERPROFILE=str(self.directory))
+        if os.name != "nt":
+            import pwd
+            username = pwd.getpwuid(os.getuid()).pw_name
+            self.child_env.update(HOME=str(self.directory),USER=username,LOGNAME=username)
         self.log = (self.directory / "server.log").open("wb")
         pidfile = self.directory / "gitea.pid"
         self.process = subprocess.Popen([str(self.binary), "--work-path", str(self.directory), "--config", str(self.config),

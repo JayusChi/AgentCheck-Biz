@@ -39,6 +39,10 @@ def child_environment(extra=None):
 def extract_native(native, destination):
     """Materialize in-archive library links as files; never create filesystem links."""
     destination = Path(destination).absolute()
+    if destination.exists() and (destination.is_symlink() or getattr(destination.lstat(),'st_file_attributes',0) & 0x400):
+        raise ValueError('Linked PostgreSQL destination refused')
+    # Hosted Windows uses a short (8.3) TEMP path; compare canonical paths.
+    destination = destination.resolve()
     members = {m.name.rstrip('/'):m for m in native.getmembers()}
     if len(members) != len(native.getmembers()):
         raise ValueError('Duplicate PostgreSQL archive member')
