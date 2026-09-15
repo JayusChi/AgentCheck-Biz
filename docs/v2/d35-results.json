@@ -1,0 +1,186 @@
+{
+  "schema": "d35-results/1",
+  "recorded_at": "2026-09-15T02:26:11.666323+00:00",
+  "engineering_status": "PASS",
+  "overall_status": "CANDIDATE_PENDING_INDEPENDENT_TRIAL",
+  "new_model_requests": 0,
+  "tests": {
+    "core": 224,
+    "delivery": 15,
+    "d34_included": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fresh_environment": {
+    "status": "PASS",
+    "new_venv": true,
+    "source_copy": true,
+    "new_frontend_install": true,
+    "official_binary_cache_verified": true,
+    "reused_business_data": false,
+    "steps": [
+      {
+        "name": "new-venv",
+        "exit_code": 0,
+        "seconds": 12.89
+      },
+      {
+        "name": "frozen-python-install",
+        "exit_code": 0,
+        "seconds": 87.14
+      },
+      {
+        "name": "prepare-postgres",
+        "exit_code": 0,
+        "seconds": 5.52
+      },
+      {
+        "name": "prepare-gitea",
+        "exit_code": 0,
+        "seconds": 0.56
+      },
+      {
+        "name": "delivery-tests",
+        "exit_code": 0,
+        "seconds": 8.02
+      },
+      {
+        "name": "delivery-demo",
+        "exit_code": 3,
+        "seconds": 232.19
+      }
+    ],
+    "final_retest": "PASS",
+    "final_source_sha256": "2e7f3b3cb63a55ea539ab185131f200a3c89d277f64d3c68b789a61a74138729",
+    "tested_bundle": {
+      "files": 314,
+      "sha256": "f9d719d34f8d74977f0dde1243aeae2a1bd1e340ce67c2a5216bd716b97092e2",
+      "source_sha256": "248696369c9daa300e911599d42ff4137274430c987490cca7824c85a5e55003"
+    }
+  },
+  "integration": {
+    "ticket_count": 1,
+    "ticket_tool_calls": 2,
+    "network_planned": 3,
+    "network_checked": 3,
+    "recovery_planned": 4,
+    "recovery_checked": 4
+  },
+  "controls": [
+    {
+      "id": "A_unsafe_control",
+      "observed": {
+        "business_status": "PASS",
+        "evidence_status": "PASS",
+        "coverage": "transparent",
+        "resource_count": 1,
+        "tool_calls": 1
+      }
+    },
+    {
+      "id": "B_unsafe_loss_retry",
+      "observed": {
+        "business_status": "FAIL",
+        "evidence_status": "PASS",
+        "coverage": "covered",
+        "resource_count": 2,
+        "tool_calls": 2
+      }
+    },
+    {
+      "id": "C_fixed_loss_retry",
+      "observed": {
+        "business_status": "PASS",
+        "evidence_status": "PASS",
+        "coverage": "covered",
+        "resource_count": 1,
+        "tool_calls": 2
+      }
+    }
+  ],
+  "negative_release_gate": {
+    "status": "FAIL",
+    "expected": true,
+    "exit_code": 1
+  },
+  "ui": {
+    "status": "PASS",
+    "verification": "Browser interaction plus HTTP artifact equality checks",
+    "instance_id": "1e8d2dfe4a034f1e8a06f680795f0267",
+    "backend": "2.31.0",
+    "cases": 12,
+    "recovery_records": 4,
+    "runs": [
+      {
+        "case": "T03",
+        "version": "unsafe",
+        "status": "FAIL",
+        "run_id": "job-9fc8b3fd273e4d3388fd7136bf09e582"
+      },
+      {
+        "case": "T03",
+        "version": "fixed",
+        "status": "PASS",
+        "run_id": "job-28717f9914794689a01f9f02865b9738"
+      },
+      {
+        "case": "T07",
+        "version": "fixed",
+        "status": "PASS",
+        "run_id": "job-8fe90e0211b5487394a12dbe87aa46a2"
+      }
+    ],
+    "history_count": 3,
+    "visible_checks": [
+      "current recovery success",
+      "Gitea outcome unknown",
+      "T03 FAIL/PASS comparison",
+      "T07 permission stop",
+      "long report scrolling",
+      "current backend compatibility passed"
+    ],
+    "downloads": "report.md returns 200; checks.json equals current detail",
+    "lifecycle": "PASS: health, acknowledged stop, stopped health rejection, new-instance restart and preserved history",
+    "restarted_instance_id": "7591c378506a46ae84b57b22e9c7b475"
+  },
+  "independent_trial": {
+    "status": "PENDING",
+    "participants": 0,
+    "feedback_received": false
+  },
+  "historical_model_evidence": {
+    "milestone": "D34",
+    "slots": 6,
+    "model_requests": 16,
+    "known_tokens": 11038,
+    "read_only_recheck": "PASS",
+    "new_requests": 0,
+    "limitation": "Query recovery did not exercise create retry or deduplication."
+  },
+  "publication": {
+    "kind": "prerelease",
+    "repository": "JayusChi/AgentCheck-Biz",
+    "tag": "v2.0.0-rc.1",
+    "status_source": "https://github.com/JayusChi/AgentCheck-Biz/releases/tag/v2.0.0-rc.1"
+  },
+  "local_evidence": "artifacts/d35-fresh-4/source/artifacts/delivery-final/delivery.json",
+  "retained_failed_attempts": [
+    {
+      "directory": "artifacts/d35-fresh-1",
+      "reason": "Global Python site customization was incompatible with forced UTF-8; bootstrap now uses -I -S"
+    },
+    {
+      "directory": "artifacts/d35-fresh-2",
+      "reason": "Sandbox blocked dependency download"
+    },
+    {
+      "directory": "artifacts/d35-fresh-3",
+      "reason": "Missing requirements.txt in source allowlist; now included"
+    },
+    {
+      "directory": "artifacts/d35-fresh-4/source/artifacts/delivery",
+      "reason": "Self-test wrapper treated expected gate FAIL/1 as execution error; dedicated gate process handling added and final demo rerun in this newly installed environment"
+    }
+  ]
+}

@@ -4,11 +4,19 @@ Code and artifacts for **AgentCheck: A Reproduce–Intervene–Mitigate Workbenc
 
 AgentCheck connects to an MCP server (or uses bundled examples), runs a clean agent execution, replays the same run while injecting exactly one tool-response fault, scores how the agent handled the fault, and optionally re-runs with mitigations to confirm whether a fix closes the failure.
 
+## V2 候选版交付（2026-09-15）
+
+**工程验收通过，独立第三方试用待反馈。** 从 [候选交付说明](docs/v2/delivery.md) 开始：新环境安装 → `scripts/delivery.py demo` → `serve` → `health` / `stop`。本轮 224 项核心测试、前端构建、3 个网络和4 个恢复场景通过；真实 A/B/C 的工单数为 1/2/1，已知重复缺陷被发布门禁拒绝。均无新增模型费用。
+
+[D35 结果](docs/v2/d35.md) · [结果索引](docs/v2/d35-results.json) · [五分钟演示](docs/v2/demo-five-minutes.md) · [试用说明](docs/v2/trial.md) · [候选发布](https://github.com/JayusChi/AgentCheck-Biz/releases/tag/v2.0.0-rc.1)
+
+下方保留逐阶段历史记录；历史报告的本机 artifacts 链接不包含在公开源码包中。本候选包的安装和验收以以上入口为准。
+
 ## 本地业务扩展：两周验收入口
 
 **首次使用请看 [AgentCheck-Biz 快速开始](docs/quickstart.md)**：无需密钥即可复现“提交成功但响应丢失 → 重试产生业务重复 → 幂等修复”，并在 `/business` 查看数据库、事件、检查和版本对比。这份快速开始演示 V1 本地工具；D20 已新增两对象的真实业务 MCP 接入，见下方第二版入口。
 
-**第二版进度**：D16–D32 已完成，最新为 [D32 基线比较与发布门禁](docs/v2/regression.md)。561 项测试通过；真实重复写入候选被发布门禁拒绝，修复版通过，预期缺陷自测保持独立。新增逐项条件比较、五项业务不变量、显式案例策略和 JSON / Markdown / JUnit 报告；D26–D31 及 415 条历史证据复查通过，零新增付费模型请求。下一步 D33 无模型 CI 与一键复现。[Markdown 计划](AgentCheck_业务结果验证_项目计划说明书_2026-09-07.md#day-33)与[HTML 计划](AgentCheck_业务结果验证_项目计划说明书_2026-09-07.html#day-33)已同步；可运行 `python scripts/sync_project_plan.py --check`。
+**第二版进度**：D16–D33 已完成。D33 无模型 CI 已取得真实远程绿灯、重复写入回归红灯及恢复后的绿灯；Windows 202 项测试和前端构建通过，Linux 固定容器的 3 个网络实验、4 个恢复场景通过；独立源码包本机复现通过，零付费模型请求。[一键复现说明](docs/v2/reproduce.md)；运行 `python scripts/verify_v2.py`。D34 已完成本轮获授权真实模型实验与只读证据复查：6 PASS，16 次请求，11,038 已知 tokens；未触发创建重试的样本不作去重有效性结论。见 [D34 实施记录](docs/v2/d34.md)与[完整请求预览](docs/v2/d34-preview.md)。
 
 D13 新增固定预算实验入口 `python -m agentcheck_biz.experiment`，默认只预览；`--live` 才发送付费请求。固定 F1/F2/F3 × A/B/C，共 9 次运行，最多 45 次请求，逐样本保留轨迹和所有结论。D14 的自动验收入口仍为下方 `verify_clean.py`；项目所有者已完成真实试用，滚动与旧接口 422 问题处理后确认测试无问题、T03/T07 可理解，见 [试用反馈](docs/day14-user-feedback.md)。最新证据见 [D13 / D14 记录](docs/day13-day14-walkthrough.md)，贡献归属见 [UPSTREAM.md](UPSTREAM.md)。
 

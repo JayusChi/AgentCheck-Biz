@@ -8,6 +8,10 @@ from .manifest import read,validate,capabilities
 
 
 def main():
+    if sys.argv[1:2]==['experiment']:
+        from agentcheck_biz.live_recovery.__main__ import main as experiment
+        sys.argv.pop(1)
+        return experiment()
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=['validate','run','batch','check','capabilities','_worker'])
     parser.add_argument('--manifest',type=Path)

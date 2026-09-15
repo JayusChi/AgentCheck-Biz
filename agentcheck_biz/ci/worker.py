@@ -16,6 +16,8 @@ CORE = [
     'tests.v2.test_recovery_acceptance.ProtocolTests',
     'tests.v2.test_recovery_acceptance.BudgetTests',
     'tests.v2.test_ci',
+    'tests.v2.test_delivery',
+    'tests.v2.test_live_recovery',
 ]
 
 
