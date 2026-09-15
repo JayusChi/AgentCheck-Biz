@@ -153,9 +153,19 @@ npm.cmd run dev
 
 访问 [开发页面](http://localhost:5173/business)。Vite 将 `/api` 转发到后端的 8000 端口；完整恢复演示使用前述 `delivery.py serve` 入口。
 
-如需使用真实模型工作台，将 [.env.example](.env.example) 复制为 `.env`，按所选模型服务商填写密钥与端点后重启后端。百炼使用 `DASHSCOPE_API_KEY` / `DASHSCOPE_BASE_URL`；其他服务商和辅助评分配置见示例文件。密钥仅存放在后端环境中，不提交到 Git。
+如需使用真实模型工作台，在项目根目录创建 `.env`，按所选模型服务商填写密钥与端点后重启后端。公共源码不附带 `.env` 文件。以百炼为例：
 
-真实模型运行会发送请求并可能产生费用。模型实验的计划、预算和证据边界见 [D34 请求预览](docs/v2/d34-preview.md) 与 [D34 实验记录](docs/v2/d34.md)。上游实验脚本保留在 `experiments/`，其结果与本项目业务验收分别解读。
+```dotenv
+DASHSCOPE_API_KEY=填写自己的密钥
+DASHSCOPE_BASE_URL=填写百炼控制台提供的兼容接口地址
+# 可选：使用百炼进行辅助评分
+AGENTCHECK_JUDGE_PROVIDER=bailian
+AGENTCHECK_JUDGE_MODEL=qwen3.7-max
+```
+
+OpenAI 和 Anthropic 分别使用 `OPENAI_API_KEY` 和 `ANTHROPIC_API_KEY`。密钥仅存放在后端环境中，不提交到 Git。
+
+真实模型运行会发送请求并可能产生费用。已公开的历史模型实验数量与证据边界见 [历史证据索引](docs/v2/history.md)。完整请求预览和原始轨迹保留在项目所有者本机；默认交付演示不需要这些材料或模型配置。上游研究实验与本项目业务验收分别解读。
 
 ## 项目结构
 
@@ -170,7 +180,6 @@ scripts/             依赖准备、验收、打包与演示入口
 tests/               业务及 V2 自动化测试
 ci/                  固定验收契约、源码白名单与容器配置
 docs/                安装、设计、演示和阶段验收记录
-experiments/         上游研究实验及业务实验相关材料
 artifacts/           本机生成的运行结果，不随公共源码发布
 ```
 
@@ -191,12 +200,11 @@ artifacts/           本机生成的运行结果，不随公共源码发布
 | [候选交付记录](docs/v2/d35.md) / [结果索引](docs/v2/d35-results.json) | 本轮验收范围和已知保留项 |
 | [独立试用说明](docs/v2/trial.md) | 试用步骤与反馈模板 |
 | [自动化与容器复现](docs/v2/reproduce.md) | Windows / Linux 验收与 CI 输出 |
-| [业务 MCP 接入](docs/v2/mcp-integration.md) | Ticket 与 Gitea 的协议接线与兼容范围 |
+| [业务 MCP 示例](examples/business_mcp) | Ticket 与 Gitea 的 MCP 接入源码 |
 | [历史证据索引](docs/v2/history.md) | D33 CI 与 D34 模型实验 |
-| [V1 本地快速开始](docs/quickstart.md) | 早期函数级工单演示；范围以该阶段为准 |
 | [来源与贡献边界](UPSTREAM.md) | 上游归属及业务扩展记录 |
 
-逐日开发和历史实验保留在 `docs/`，其中的测试数量与能力描述对应记录当时的版本；部分原始产物只保存在项目所有者本机。
+公共 `docs/` 提供候选交付说明和历史证据索引。完整逐日开发记录及部分原始产物保存在项目所有者本机；历史测试数量与能力描述对应记录当时的版本。
 
 ## 贡献
 
