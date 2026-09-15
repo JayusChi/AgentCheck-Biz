@@ -17,7 +17,9 @@ class DeliveryTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # Windows runners may expose TEMP through an 8.3 short path.
+        # Match the resolved checkout root used by the real delivery module.
+        self.root = Path(self.temp.name).resolve()
 
     def archive(self, files=None, extra=None):
         files = files if files is not None else {'hello.py': b'print(1)'}

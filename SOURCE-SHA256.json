@@ -909,11 +909,11 @@
   },
   {
     "path": "docs/v2/d35-results.json",
-    "sha256": "e73aea6426d8ae3c513a2533600b563b61c7e2ea2a08b3144068ad32e2bffbe1"
+    "sha256": "f4779930d6e49eb123ea05e654a627e1e09e480619df1dd302165e513da6bffb"
   },
   {
     "path": "docs/v2/d35.md",
-    "sha256": "5962dbce0003faec715aae948c3d55492c5077fb5c4d393dae91bd8226a0b42a"
+    "sha256": "4667eb31a17e03115566325014d43c58733c3ecb816a0fc4cc6f4af5ea3578c6"
   },
   {
     "path": "docs/v2/delivery.md",
@@ -1213,7 +1213,7 @@
   },
   {
     "path": "tests/v2/test_delivery.py",
-    "sha256": "6bf830e8fa4b9ae653c0a682ba5a858d0514ed231184c95bf9e703b3a950983b"
+    "sha256": "661ccdef3fe67c690cd972e691b6be3aea452bd7ae39d2209e47463bc70c0c43"
   },
   {
     "path": "tests/v2/test_gitea.py",

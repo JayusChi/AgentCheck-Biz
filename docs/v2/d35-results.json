@@ -182,5 +182,16 @@
       "directory": "artifacts/d35-fresh-4/source/artifacts/delivery",
       "reason": "Self-test wrapper treated expected gate FAIL/1 as execution error; dedicated gate process handling added and final demo rerun in this newly installed environment"
     }
-  ]
+  ],
+  "candidate_ci_initial": {
+    "run_url": "https://github.com/JayusChi/AgentCheck-Biz/actions/runs/34921306770",
+    "windows": "FAIL: one test fixture used unresolved Windows short TEMP path",
+    "linux": "PASS",
+    "fix": "Resolve the test fixture temporary root, matching the production root; no output boundary relaxation",
+    "targeted_retest": {
+      "tests": 15,
+      "failures": 0,
+      "errors": 0
+    }
+  }
 }
