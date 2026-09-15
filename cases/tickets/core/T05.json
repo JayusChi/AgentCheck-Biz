@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "case_id": "T05_temporary_unavailable",
+  "task": "为客户 C001 的设备 D001 创建维修工单，描述为无法开机",
+  "context": {
+    "tenant_id": "tenant-A",
+    "operation_id": "repair-001"
+  },
+  "request": {
+    "customer_id": "C001",
+    "device_id": "D001",
+    "description": "无法开机"
+  },
+  "initial_tickets": [
+    {
+      "ticket_id": "T-unrelated",
+      "tenant_id": "tenant-B",
+      "operation_id": "repair-001",
+      "customer_id": "C999",
+      "device_id": "D999",
+      "description": "已有工单，保持不变",
+      "status": "open"
+    }
+  ],
+  "fault": {
+    "kind": "F2",
+    "tool": "create_ticket",
+    "point": "before_service",
+    "occurrence": 1,
+    "max_injections": 1
+  },
+  "expected": {
+    "ticket_count_for_operation": 1,
+    "customer_id": "C001",
+    "device_id": "D001",
+    "description": "无法开机",
+    "status": "open",
+    "client_status": "completed"
+  },
+  "limits": {
+    "max_tool_calls": 6,
+    "max_client_attempts": 2
+  }
+}

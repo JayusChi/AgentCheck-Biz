@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -102,7 +103,13 @@ def run_workbench(payload: dict, request: Request):
 
     runner = MCPProxyRunner(mcp_server_url=mcp_server_url, model=model, harness=harness)
     try:
-        result = runner.compare(task, FaultSpec(fault_type=fault_type, tool_id=tool_id, occurrence=occurrence), mitigation=mitigation)
+        result = runner.compare(
+            task,
+            FaultSpec(fault_type=fault_type, tool_id=tool_id, occurrence=occurrence),
+            mitigation=mitigation,
+            judge_model=os.environ.get("AGENTCHECK_JUDGE_MODEL") or "claude-haiku-4-5-20251001",
+            judge_provider=os.environ.get("AGENTCHECK_JUDGE_PROVIDER") or None,
+        )
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(502, f"Workbench run failed: {exc}") from exc
 

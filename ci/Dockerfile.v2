@@ -1,0 +1,13 @@
+# Each run owns one disposable PID/network namespace. No host ports or volumes.
+FROM python:3.10.20-bookworm@sha256:2cffd68eda34762d010cba5de2e4462fcdab15ac2a53722b7cb17e8c76255cb3
+WORKDIR /workspace
+COPY requirements-acceptance.txt requirements-persistence.txt ./
+RUN python -m pip install --no-cache-dir -r requirements-acceptance.txt -r requirements-persistence.txt && python -m pip check
+COPY . .
+RUN python scripts/fetch_postgres.py && python scripts/fetch_gitea.py \
+    && useradd --create-home --uid 10001 acceptance \
+    && mkdir -p tmp artifacts/v2 \
+    && chown -R acceptance:acceptance /workspace
+USER 10001:10001
+ENV PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 PYTHON_DOTENV_DISABLED=1
+CMD ["python", "-X", "utf8", "scripts/verify_v2.py", "--scope", "integration", "--output", "artifacts/ci/linux", "--container"]

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentCheck confirmed response loss v2 (D22)",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "rule_id", "run_id", "tool", "request_numbers", "phase", "action", "max_triggers", "delay_ms"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "rule_id": {"type": "string", "pattern": "^[a-zA-Z0-9_-]{1,64}$"},
+    "run_id": {"type": "string", "minLength": 1, "maxLength": 150},
+    "tool": {"enum": ["create_ticket", "create_issue"]},
+    "request_numbers": {"const": [1]},
+    "phase": {"const": "after_independent_confirmation"},
+    "action": {"const": "drop"}, "max_triggers": {"const": 1}, "delay_ms": {"const": 0}
+  }
+}

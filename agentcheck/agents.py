@@ -247,6 +247,8 @@ class LangChainReActAgent(Agent):
         lc_tools = _build_lc_tools(tools, self.tool_executor)
 
         llm_kwargs: dict[str, Any] = {"model": self.model, "temperature": 0}
+        if self.provider == "bailian":
+            llm_kwargs["extra_body"] = {"enable_thinking": False}
         if self.api_key:
             llm_kwargs["api_key"] = self.api_key
         elif self.provider == "openai":
@@ -385,6 +387,7 @@ class OpenAIToolCallingAgent(Agent):
                 messages=messages,
                 tools=openai_tools if openai_tools else None,
                 temperature=0,
+                **({"extra_body": {"enable_thinking": False}} if self.provider == "bailian" else {}),
             )
             usage = response.usage
             if usage:

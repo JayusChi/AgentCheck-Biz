@@ -65,7 +65,7 @@
   --pastel-lavender-border: #c5dade;
 
   /* Fonts & styles */
-  --font: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font: "Plus Jakarta Sans", "Inter", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
   --font-serif: "Source Serif 4", "Iowan Old Style", "Georgia", serif;
   --mono: "JetBrains Mono", "IBM Plex Mono", monospace;
   --radius: 8px;

@@ -27,7 +27,7 @@ function getAtPath(obj: Record<string, unknown>, path: string): unknown {
 }
 
 function formatValue(value: unknown): string {
-  if (value === undefined) return "(missing)";
+  if (value === undefined) return "（缺失）";
   if (typeof value === "object") return JSON.stringify(value, null, 2);
   return String(value);
 }
@@ -53,11 +53,11 @@ export function ResponseDiff({ clean, injected }: ResponseDiffProps) {
     return (
       <div className="response-pair">
         <div>
-          <div className="response-label">Clean response</div>
+          <div className="response-label">正常响应</div>
           <pre className="response-box clean">{formatValue(clean)}</pre>
         </div>
         <div>
-          <div className="response-label">Injected response</div>
+          <div className="response-label">故障注入后的响应</div>
           <pre className="response-box injected">{formatValue(injected)}</pre>
         </div>
       </div>
@@ -69,9 +69,9 @@ export function ResponseDiff({ clean, injected }: ResponseDiffProps) {
       <table className="response-diff-table">
         <thead>
           <tr>
-            <th>Field</th>
-            <th>Clean</th>
-            <th>Injected</th>
+            <th>字段</th>
+            <th>正常值</th>
+            <th>注入后值</th>
           </tr>
         </thead>
         <tbody>

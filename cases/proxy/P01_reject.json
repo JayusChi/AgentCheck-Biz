@@ -1,0 +1,1 @@
+{"scenario_id":"P01_reject","rule":{"schema_version":1,"rule_id":"reject-first","run_id":"$run_id","tool":"create_ticket","request_numbers":[1],"phase":"before_forward","action":"reject","max_triggers":1,"delay_ms":0}}

@@ -1,0 +1,7 @@
+{
+  "schema_version": "agentcheck-ci/1",
+  "ticket_candidate": "C_fixed_loss_retry",
+  "network_profiles": ["gitea_P00_transparent", "Gitea_api_visible_loss"],
+  "recovery_scenarios": ["committed-tool-result", "storage-unavailable", "gitea-resume", "gitea-unknown-empty"],
+  "model_requests": 0
+}

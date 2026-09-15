@@ -34,12 +34,12 @@ export function FaultTypesDialog({ open, onClose }: FaultTypesDialogProps) {
       <div className="tools-dialog-panel">
         <header className="tools-dialog-header">
           <div>
-            <h2 className="tools-dialog-title">Fault types</h2>
+            <h2 className="tools-dialog-title">故障类型</h2>
             <p className="tools-dialog-subtitle">
-              Failures AgentCheck can inject into a tool response during a comparison run.
+              AgentCheck 可在对比执行中注入的故障及对应的通过条件。
             </p>
           </div>
-          <button type="button" className="tools-dialog-close" onClick={onClose} aria-label="Close">
+          <button type="button" className="tools-dialog-close" onClick={onClose} aria-label="关闭">
             ×
           </button>
         </header>
@@ -54,7 +54,7 @@ export function FaultTypesDialog({ open, onClose }: FaultTypesDialogProps) {
                       <span className="tools-dialog-item-name">{fault.name}</span>
                     </div>
                     <p className="tools-dialog-item-desc">{fault.description}</p>
-                    <p className="fault-types-pass-criterion">Pass if: {fault.passCriterion}</p>
+                    <p className="fault-types-pass-criterion">通过条件： {fault.passCriterion}</p>
                   </li>
                 ))}
               </ul>

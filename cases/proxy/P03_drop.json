@@ -1,0 +1,1 @@
+{"scenario_id":"P03_drop","rule":{"schema_version":1,"rule_id":"drop-first","run_id":"$run_id","tool":"create_ticket","request_numbers":[1],"phase":"after_upstream_response","action":"drop","max_triggers":1,"delay_ms":0}}

@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "case_id": "G03_close",
+  "operation_id": "issue-001",
+  "request": {
+    "title": "设备维修：无法开机",
+    "body": "客户 C001 / 设备 D001。请登记维修问题。"
+  },
+  "initial_issues": [
+    {
+      "operation_id": "unrelated-0",
+      "title": "设备维修：无法开机",
+      "body": "不同业务操作，保持不变：0",
+      "state": "open"
+    },
+    {
+      "operation_id": "unrelated-1",
+      "title": "设备维修：无法开机",
+      "body": "不同业务操作，保持不变：1",
+      "state": "closed"
+    },
+    {
+      "operation_id": "unrelated-2",
+      "title": "设备维修：无法开机",
+      "body": "不同业务操作，保持不变：2",
+      "state": "open"
+    },
+    {
+      "operation_id": "unrelated-3",
+      "title": "设备维修：无法开机",
+      "body": "不同业务操作，保持不变：3",
+      "state": "closed"
+    },
+    {
+      "operation_id": "unrelated-4",
+      "title": "设备维修：无法开机",
+      "body": "不同业务操作，保持不变：4",
+      "state": "open"
+    }
+  ],
+  "scenario": "close",
+  "expected": {
+    "count": 1,
+    "state": "closed"
+  },
+  "limits": {
+    "max_tool_calls": 3,
+    "page_size": 2,
+    "max_pages": 10
+  }
+}

@@ -1,0 +1,1 @@
+{"scenario_id":"P02_delay","rule":{"schema_version":1,"rule_id":"delay-first","run_id":"$run_id","tool":"create_ticket","request_numbers":[1],"phase":"after_upstream_response","action":"delay","max_triggers":1,"delay_ms":5000}}

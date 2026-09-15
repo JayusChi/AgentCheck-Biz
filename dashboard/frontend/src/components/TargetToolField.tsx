@@ -26,7 +26,7 @@ export function TargetToolField({
 
   return (
     <div className="form-field target-tool-field">
-      <label htmlFor="target-tool">Tool to inject into</label>
+      <label htmlFor="target-tool">故障注入目标工具</label>
       {choices ? (
         <select
           id="target-tool"
@@ -37,7 +37,7 @@ export function TargetToolField({
         >
           {choices.map((tool) => (
             <option key={tool.value} value={tool.value}>
-              {tool.value}
+              {tool.name}（{tool.value}）
             </option>
           ))}
         </select>

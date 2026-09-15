@@ -1,0 +1,1 @@
+{"scenario_id":"P04_miss","rule":{"schema_version":1,"rule_id":"request-not-reached","run_id":"$run_id","tool":"create_ticket","request_numbers":[99],"phase":"after_upstream_response","action":"drop","max_triggers":1,"delay_ms":0}}

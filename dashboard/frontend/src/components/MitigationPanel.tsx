@@ -13,10 +13,10 @@ const MITIGATION_OPTIONS: {
   label: string;
   typicallyAddresses: string;
 }[] = [
-  { key: "retry_backoff", label: "Retry with backoff", typicallyAddresses: "Timeouts, transient API errors" },
-  { key: "schema_validation", label: "Schema validation", typicallyAddresses: "Schema drift" },
-  { key: "injection_scanner", label: "Injection filter", typicallyAddresses: "Prompt injection, data exfiltration" },
-  { key: "output_verifier", label: "Output verifier", typicallyAddresses: "Inconsistent output formats" },
+  { key: "retry_backoff", label: "退避重试", typicallyAddresses: "超时、临时 API 错误" },
+  { key: "schema_validation", label: "响应结构校验", typicallyAddresses: "响应结构变化" },
+  { key: "injection_scanner", label: "注入过滤", typicallyAddresses: "提示词注入、数据外传" },
+  { key: "output_verifier", label: "输出校验", typicallyAddresses: "输出格式不一致" },
 ];
 
 interface MitigationPanelProps {
@@ -55,13 +55,11 @@ export function MitigationPanel({
 
   return (
     <section className="mitigation-panel" style={{ marginTop: "2rem" }}>
-      <h3 className="config-card-title">{hadFaultedFailure ? "Try a mitigation" : "No mitigation needed"}</h3>
+      <h3 className="config-card-title">{hadFaultedFailure ? "尝试缓解措施" : "当前没有失败的主要检查项"}</h3>
       <p className="config-card-desc">
         {hadFaultedFailure
-          ? `The faulted run failed ${failedCheckCount} primary pass/fail check${
-              failedCheckCount === 1 ? "" : "s"
-            }. Select a mitigation and re-run the same injected fault to see whether those failed checks now pass.`
-          : "The faulted run passed all primary pass/fail checks. You can still test a mitigation, but there is no failed primary check to repair."}
+          ? `故障执行有 ${failedCheckCount} 项主要检查未通过。选择缓解措施后，使用同一故障重新运行，观察这些检查是否通过。`
+          : "故障执行通过了所有主要检查。你仍可测试缓解措施，但当前没有需要修复的失败检查项。"}
       </p>
 
       <div className="mitigation-toggle-grid" style={{ marginBottom: "1rem" }}>
@@ -84,7 +82,7 @@ export function MitigationPanel({
                 <span className="mitigation-toggle-label">{opt.label}</span>
               </div>
               <span className="mitigation-toggle-note">
-                Best for {opt.typicallyAddresses.toLowerCase()}
+                适用于： {opt.typicallyAddresses}
               </span>
             </label>
           );
@@ -95,9 +93,9 @@ export function MitigationPanel({
         <p className="mitigation-selection-note">
           {anySelected
             ? hadFaultedFailure
-              ? "Ready to re-run the same injected fault."
-              : "Ready to re-run the same injected fault, although there is no failed check to repair."
-            : "Select at least one mitigation."}
+              ? "已准备好使用相同故障重新运行。"
+              : "已准备好重新运行；当前没有失败的检查项需要修复。"
+            : "请至少选择一项缓解措施。"}
         </p>
         <button
           type="button"
@@ -106,7 +104,7 @@ export function MitigationPanel({
           onClick={() => void onRunMitigation(mitigation)}
           title={disabled ? disabledReason : undefined}
         >
-          {running ? "Re-running with mitigation..." : "Re-run with mitigation"}
+          {running ? "正在应用缓解措施并重新运行…" : "应用缓解措施并重跑"}
         </button>
       </div>
       {disabled && disabledReason && (
@@ -122,18 +120,16 @@ export function MitigationPanel({
         >
           {verdictPassed ? (
             <>
-              <strong>Mitigation passed:</strong> after re-running with mitigation, all previously
-              failed primary pass/fail checks now pass.{" "}
+              <strong>缓解检查通过：</strong> 应用缓解措施后，之前失败的主要检查项均已通过。{" "}
               <button type="button" className="mitigation-verdict-link" onClick={onShowTraces}>
-                Show traces
+                查看轨迹
               </button>
             </>
           ) : (
             <>
-              <strong>Mitigation failed:</strong> after re-running with mitigation, at least one
-              primary pass/fail check still fails.{" "}
+              <strong>缓解检查未通过：</strong> 应用缓解措施后，仍有至少一项主要检查未通过。{" "}
               <button type="button" className="mitigation-verdict-link" onClick={onShowTraces}>
-                Show traces
+                查看轨迹
               </button>
             </>
           )}

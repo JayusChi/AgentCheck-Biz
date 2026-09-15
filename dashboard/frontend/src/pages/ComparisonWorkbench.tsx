@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getCheckDescription, formatUiError, getRunLabel } from "../lib/displayText";
 import { api } from "../api";
 import { MitigationPanel } from "../components/MitigationPanel";
 import { ResponseDiff } from "../components/ResponseDiff";
@@ -29,15 +30,15 @@ function findInjectionStep(trajectory: TrajectoryStepDef[]): TrajectoryStepDef |
 function describeRecoveryAction(action: string | null | undefined): string {
   switch (action) {
     case "recovered":
-      return "Recovered";
+      return "已恢复";
     case "safe_abort":
-      return "Safe abort";
+      return "安全终止";
     case "propagated":
-      return "Propagated fault";
+      return "故障已传播";
     case "crashed":
-      return "Crashed";
+      return "执行崩溃";
     default:
-      return "No clear recovery";
+      return "未见明确恢复";
   }
 }
 
@@ -67,7 +68,8 @@ function firstCheckDescription(
   checks: { description: string; passed: boolean }[],
   passed: boolean
 ): string | null {
-  return checks.find((check) => check.passed === passed)?.description ?? null;
+  const check = checks.find((check) => check.passed === passed);
+  return check ? getCheckDescription(check.description) : null;
 }
 
 function describeAlignedRow(
@@ -82,30 +84,30 @@ function describeAlignedRow(
         faultedStep.step_type === "tool_response" &&
         faultedStep.data.injected_response != null
       ) {
-        return `Step ${rowIndex + 1}: injected response`;
+        return `第 ${rowIndex + 1} 步：注入后的响应`;
       }
       if (faultedStep.step_type === "llm_generation") {
-        return `Step ${rowIndex + 1}: diverged reasoning`;
+        return `第 ${rowIndex + 1} 步：推理出现分歧`;
       }
       if (faultedStep.step_type === "final_answer") {
-        return `Step ${rowIndex + 1}: diverged final answer`;
+        return `第 ${rowIndex + 1} 步：最终回答出现分歧`;
       }
-      return `Step ${rowIndex + 1}: diverged ${getTrajectoryStepLabel(faultedStep).toLowerCase()}`;
+      return `第 ${rowIndex + 1} 步：${getTrajectoryStepLabel(faultedStep)}出现分歧`;
     }
 
     if (cleanStep.step_type === faultedStep.step_type) {
-      return `Step ${rowIndex + 1}: aligned ${getTrajectoryStepLabel(faultedStep).toLowerCase()}`;
+      return `第 ${rowIndex + 1} 步：对齐${getTrajectoryStepLabel(faultedStep)}`;
     }
-    return `Step ${rowIndex + 1}: aligned comparison`;
+    return `第 ${rowIndex + 1} 步：对齐比较`;
   }
 
   if (cleanStep) {
-    return `Step ${rowIndex + 1}: only in clean run`;
+    return `第 ${rowIndex + 1} 步：仅正常执行包含此步`;
   }
   if (faultedStep) {
-    return `Step ${rowIndex + 1}: only in faulted run`;
+    return `第 ${rowIndex + 1} 步：仅故障执行包含此步`;
   }
-  return `Step ${rowIndex + 1}`;
+  return `第 ${rowIndex + 1} 步`;
 }
 
 export function ComparisonWorkbench({
@@ -157,22 +159,20 @@ export function ComparisonWorkbench({
   // This banner always describes the ORIGINAL clean-vs-faulted comparison,
   // never the mitigation outcome — that has its own summary next to the
   // mitigated run section below, so the two don't get conflated.
-  let summaryTitle = "Faulted run passed";
+  let summaryTitle = "故障执行通过检查";
   let summaryTone: "is-warning" | "is-stable" = "is-stable";
-  let summaryCopy = `The injected ${faultLabel} ${
-    comparison.divergence.diverged ? "changed the trajectory," : "did not change the trajectory,"
-  } and the faulted run passed the primary pass/fail checks${
-    firstPassedCheck ? `: ${firstPassedCheck}` : "."
+  let summaryCopy = `注入${faultLabel}后，${
+    comparison.divergence.diverged ? "执行轨迹发生变化" : "执行轨迹未发生变化"
+  }，故障执行通过了主要检查${
+    firstPassedCheck ? `：${firstPassedCheck}` : "。"
   }`;
 
   if (!faultChecksPassed) {
-    summaryTitle = "Faulted run failed";
+    summaryTitle = "故障执行未通过检查";
     summaryTone = "is-warning";
-    summaryCopy = `The injected ${faultLabel} ${
-      comparison.divergence.diverged ? "changed the trajectory and " : ""
-    }caused ${failedCheckCount} primary pass/fail check${
-      failedCheckCount === 1 ? "" : "s"
-    } to fail${firstFailedCheck ? `: ${firstFailedCheck}` : "."}`;
+    summaryCopy = `注入${faultLabel}后，${
+      comparison.divergence.diverged ? "执行轨迹发生变化，" : ""
+    }有 ${failedCheckCount} 项主要检查未通过${firstFailedCheck ? `：${firstFailedCheck}` : "。"}`;
   }
 
   const selectStep = (
@@ -187,7 +187,7 @@ export function ComparisonWorkbench({
     output_verifier: boolean;
   }) => {
     if (!comparison.mcp_server_url || !comparison.model || !comparison.harness || !comparison.task || !comparison.fault) {
-      setMitigationError("This comparison cannot be re-run with mitigation.");
+      setMitigationError("此对比缺少重新运行所需的配置，无法测试缓解措施。");
       return;
     }
     setMitigating(true);
@@ -228,7 +228,7 @@ export function ComparisonWorkbench({
         setPendingShowTraces(true);
       }
     } catch (err) {
-      setMitigationError(err instanceof Error ? err.message : "Mitigated run failed.");
+      setMitigationError(err instanceof Error ? formatUiError(err) : "缓解执行失败。");
     } finally {
       setMitigating(false);
     }
@@ -252,48 +252,48 @@ export function ComparisonWorkbench({
             {summaryTitle}
           </span>
           <span className="divergence-banner-callout">
-            {comparison.clean_trajectory.length} vs. {comparison.faulted_trajectory.length} steps
+            正常 {comparison.clean_trajectory.length} 步 / 故障 {comparison.faulted_trajectory.length} 步
           </span>
         </div>
         <p className="divergence-banner-copy">{summaryCopy}</p>
         <div className="divergence-summary-badges">
           <span className={`badge ${faultChecksPassed ? "pass" : "fail"}`}>
-            {faultChecksPassed ? "Primary checks passed" : "Primary checks failed"}
+            {faultChecksPassed ? "主要检查通过" : "主要检查未通过"}
           </span>
           {diagnosticsFaulted && (
             <>
               <span className={diagnosticBadgeClass(recoveryTone(diagnosticsFaulted.recovery_action))}>
-                Recovery: {describeRecoveryAction(diagnosticsFaulted.recovery_action)}
+                恢复情况： {describeRecoveryAction(diagnosticsFaulted.recovery_action)}
               </span>
             </>
           )}
         </div>
         {comparison.fault_spec && (
           <div className="divergence-fault-line">
-            <span className="divergence-fault-label">Injected fault</span>
+            <span className="divergence-fault-label">注入的故障</span>
             <code>{faultLabel}</code>
-            <span className="divergence-fault-label">into</span>
+            <span className="divergence-fault-label">目标工具</span>
             <code>{faultToolId}</code>
-            <span className="divergence-fault-label">on use #{faultOccurrence}</span>
+            <span className="divergence-fault-label">第 {faultOccurrence} 次调用</span>
           </div>
         )}
       </div>
 
       <div className="leg-checks-panel comparison-surface">
-        <h3 className="comparison-column-title">Primary pass/fail checks</h3>
+        <h3 className="comparison-column-title">主要通过 / 失败检查</h3>
         <p className="config-card-desc">
-          Deterministic checks for whether the agent handled the injected fault correctly.
+          使用确定性规则检查智能体是否正确处理了注入的故障。
         </p>
         {primaryChecksFaulted.length === 0 ? (
           <p className="config-card-desc leg-empty-state">
-            No primary pass/fail checks apply to this fault type.
+            此故障类型没有适用的主要检查项。
           </p>
         ) : (
           <ul className="leg-a-list">
             {primaryChecksFaulted.map((check: any) => (
               <li key={check.check_id} className={check.passed ? "leg-a-pass" : "leg-a-fail"}>
                 <span className="leg-a-icon">{check.passed ? "\u2713" : "\u2717"}</span>
-                <span>{check.description}</span>
+                <span title={check.description}>{getCheckDescription(check.description)}</span>
               </li>
             ))}
           </ul>
@@ -301,21 +301,21 @@ export function ComparisonWorkbench({
 
         {diagnosticsFaulted && (
           <div className="leg-b-panel">
-            <h4 className="leg-b-title">Diagnostic labels</h4>
+            <h4 className="leg-b-title">诊断标签</h4>
             <p className="config-card-desc">
-              LLM-judged labels summarizing failure detection, recovery, and uncertainty.
+              由大语言模型评审的标签，概括故障识别、恢复行为和不确定性表达。
             </p>
             <div className="leg-b-badges">
               <span className={diagnosticBadgeClass(diagnosticsFaulted.failure_detected ? "pass" : "neutral")}>
-                Problem acknowledged: {diagnosticsFaulted.failure_detected ? "Yes" : "No"}
+                是否说明问题： {diagnosticsFaulted.failure_detected ? "是" : "否"}
               </span>
               <span className={diagnosticBadgeClass(recoveryTone(diagnosticsFaulted.recovery_action))}>
-                Recovery: {describeRecoveryAction(diagnosticsFaulted.recovery_action)}
+                恢复情况： {describeRecoveryAction(diagnosticsFaulted.recovery_action)}
               </span>
               <span
                 className={diagnosticBadgeClass(diagnosticsFaulted.uncertainty_communicated ? "pass" : "neutral")}
               >
-                Uncertainty stated: {diagnosticsFaulted.uncertainty_communicated ? "Yes" : "No"}
+                是否表达不确定性： {diagnosticsFaulted.uncertainty_communicated ? "是" : "否"}
               </span>
             </div>
           </div>
@@ -325,14 +325,13 @@ export function ComparisonWorkbench({
       <div className="comparison-surface trace-toggle-panel">
         <div className="trace-toggle-header">
           <div>
-            <h3 className="comparison-column-title">Trace comparison</h3>
+            <h3 className="comparison-column-title">执行轨迹对比</h3>
             <p className="config-card-desc">
-              Optional step-level trace view for debugging. Open it when you need to inspect the
-              aligned clean and faulted trajectories.
+              展开后可逐步对比正常与故障执行。任务、工具响应和模型输出保留原文，便于核对实验数据。
             </p>
           </div>
           <button type="button" className="config-inline-action" onClick={handleToggleTraces}>
-            {showTraces ? "Hide traces" : "Show traces"}
+            {showTraces ? "收起轨迹" : "查看轨迹"}
           </button>
         </div>
       </div>
@@ -342,21 +341,21 @@ export function ComparisonWorkbench({
           <div className="comparison-columns comparison-columns-aligned">
             <div className="comparison-columns-header">
               <div className="comparison-column comparison-column-clean comparison-column-shell">
-                <h3 className="comparison-column-title">Clean run</h3>
+                <h3 className="comparison-column-title">正常执行（Clean run）</h3>
                 <p className="comparison-column-subtitle">
-                  Baseline execution · {comparison.clean_trajectory.length} steps
+                  基线执行 · {comparison.clean_trajectory.length} 步
                 </p>
                 {comparison.clean_run_error && (
-                  <p className="run-error-notice">Run failed: {comparison.clean_run_error}</p>
+                  <p className="run-error-notice">执行失败：{formatUiError(comparison.clean_run_error)}</p>
                 )}
               </div>
               <div className="comparison-column comparison-column-faulted comparison-column-shell">
-                <h3 className="comparison-column-title">Faulted run</h3>
+                <h3 className="comparison-column-title">故障执行（Faulted run）</h3>
                 <p className="comparison-column-subtitle">
-                  Fault injected · {comparison.faulted_trajectory.length} steps
+                  已注入故障 · {comparison.faulted_trajectory.length} 步
                 </p>
                 {comparison.faulted_run_error && (
-                  <p className="run-error-notice">Run failed: {comparison.faulted_run_error}</p>
+                  <p className="run-error-notice">执行失败：{formatUiError(comparison.faulted_run_error)}</p>
                 )}
               </div>
             </div>
@@ -413,7 +412,7 @@ export function ComparisonWorkbench({
 
           {injectionStep && (
             <div className="injection-diff-panel comparison-surface">
-              <h3 className="comparison-column-title">Clean vs. injected tool response</h3>
+              <h3 className="comparison-column-title">正常响应与故障注入后的响应</h3>
               <ResponseDiff
                 clean={
                   (typeof injectionStep.data.clean_response === "object"
@@ -433,11 +432,12 @@ export function ComparisonWorkbench({
             <div className="selected-step-panel comparison-surface">
               <div className="selected-step-header">
                 <h4 className="selected-step-title">
-                  Step detail ({selectedStep.source} · {selectedStep.step.step_type})
+                  步骤详情（{getRunLabel(selectedStep.source)} · {getTrajectoryStepLabel(selectedStep.step)}）
                 </h4>
                 <button
                   type="button"
                   className="kv-remove-btn"
+                  aria-label="关闭步骤详情"
                   onClick={() => setSelectedStep(null)}
                 >
                   &times;
@@ -460,7 +460,7 @@ export function ComparisonWorkbench({
         disabled={!liveMode || !comparison.mcp_server_url}
         disabledReason={
           !liveMode
-            ? "Switch to Connect and run a live comparison to try mitigations."
+            ? "请切换到“连接 MCP 服务器”并运行实时对比，再测试缓解措施。"
             : undefined
         }
       />
@@ -476,13 +476,13 @@ export function ComparisonWorkbench({
           style={{ marginTop: "1.5rem" }}
           ref={mitigatedSectionRef}
         >
-          <h3 className="comparison-column-title">Redone with mitigation</h3>
+          <h3 className="comparison-column-title">缓解执行结果（Mitigated run）</h3>
           {primaryChecksMitigated && (
             <ul className="leg-a-list" style={{ marginBottom: "1rem" }}>
               {primaryChecksMitigated.map((check: any) => (
                 <li key={check.check_id} className={check.passed ? "leg-a-pass" : "leg-a-fail"}>
                   <span className="leg-a-icon">{check.passed ? "\u2713" : "\u2717"}</span>
-                  <span>{check.description}</span>
+                  <span title={check.description}>{getCheckDescription(check.description)}</span>
                 </li>
               ))}
             </ul>
@@ -490,9 +490,9 @@ export function ComparisonWorkbench({
 
           <div className="trace-toggle-header">
             <div>
-              <h3 className="comparison-column-title">Mitigated run trace</h3>
+              <h3 className="comparison-column-title">缓解执行轨迹</h3>
               <p className="config-card-desc">
-                Optional step-level trace for the mitigated rerun · {comparison.mitigated_trajectory.length} steps
+                查看应用缓解措施后的逐步轨迹 · {comparison.mitigated_trajectory.length} 步
               </p>
             </div>
             <button
@@ -508,7 +508,7 @@ export function ComparisonWorkbench({
                 })
               }
             >
-              {showMitigatedTraces ? "Hide mitigated traces" : "Show mitigated traces"}
+              {showMitigatedTraces ? "收起缓解轨迹" : "查看缓解轨迹"}
             </button>
           </div>
 
@@ -530,11 +530,12 @@ export function ComparisonWorkbench({
                 <div className="selected-step-panel" style={{ marginTop: "1rem" }}>
                   <div className="selected-step-header">
                     <h4 className="selected-step-title">
-                      Step detail ({selectedStep.source} · {selectedStep.step.step_type})
+                      步骤详情（{getRunLabel(selectedStep.source)} · {getTrajectoryStepLabel(selectedStep.step)}）
                     </h4>
                     <button
                       type="button"
                       className="kv-remove-btn"
+                      aria-label="关闭步骤详情"
                       onClick={() => setSelectedStep(null)}
                     >
                       &times;
