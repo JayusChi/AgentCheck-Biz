@@ -1,7 +1,7 @@
 name: V2 model-free acceptance
 on:
   push:
-    branches: [main, 'codex/d33-*', 'codex/d35-*']
+    branches: [main, ci-validation, release-candidate]
   pull_request:
   workflow_dispatch:
 

@@ -1,7 +1,7 @@
 [
   {
     "path": ".github/workflows/verify-v2.yml",
-    "sha256": "c457328c895aa34b11217630e12120fd3cb55dc3ae21f2b05e71d9f05ee1a088"
+    "sha256": "61947ff9c12ce416f45207b4db80a7c2041f50fba18bf2ef37754940facab139"
   },
   {
     "path": "LICENSE",
@@ -9,7 +9,7 @@
   },
   {
     "path": "README.md",
-    "sha256": "87f3b17a97a3e1050246769d019d8cc21569edd7906ba9763f6a8623aa6364c7"
+    "sha256": "9f91ec8543c23bd4086f824bb6d5e0b9089ed65c7b82e6d0d4a3ed636ae91dcc"
   },
   {
     "path": "UPSTREAM.md",

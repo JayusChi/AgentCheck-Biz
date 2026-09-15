@@ -1,226 +1,211 @@
-# AgentCheck
+# AgentCheck-Biz
 
-Code and artifacts for **AgentCheck: A Reproduce–Intervene–Mitigate Workbench for LLM Agents over MCP**.
+**面向 LLM Agent 与 MCP 工具的业务结果验证工作台。**
 
-AgentCheck connects to an MCP server (or uses bundled examples), runs a clean agent execution, replays the same run while injecting exactly one tool-response fault, scores how the agent handled the fault, and optionally re-runs with mitigations to confirm whether a fix closes the failure.
+AgentCheck-Biz 基于 [AgentCheck](https://github.com/aritra741/AgentCheck) 扩展，通过故障注入、独立业务观察和修复前后对比，验证 Agent 执行后的实际业务状态。例如：创建工单已经提交，但工具响应丢失；Agent 重试后，系统是否产生了重复工单？
 
-## V2 候选版交付（2026-09-15）
+平台保留工具调用、事件、数据库或只读 API 观察以及逐项检查结果，帮助区分“执行结束”“工具返回成功”和“业务契约满足”。
 
-**工程验收通过，独立第三方试用待反馈。** 从 [候选交付说明](docs/v2/delivery.md) 开始：新环境安装 → `scripts/delivery.py demo` → `serve` → `health` / `stop`。本轮 224 项核心测试、前端构建、3 个网络和4 个恢复场景通过；真实 A/B/C 的工单数为 1/2/1，已知重复缺陷被发布门禁拒绝。均无新增模型费用。
+**当前演示版本：`v2.0.0-rc.1`（V2 候选版）。** 2026-09-15 的工程验收已通过，独立第三方试用反馈仍待取得。详见 [交付记录](docs/v2/d35.md) 和 [验收结果](docs/v2/d35-results.json)。
 
-[D35 结果](docs/v2/d35.md) · [结果索引](docs/v2/d35-results.json) · [五分钟演示](docs/v2/demo-five-minutes.md) · [试用说明](docs/v2/trial.md) · [候选发布](https://github.com/JayusChi/AgentCheck-Biz/releases/tag/v2.0.0-rc.1)
+[安装与运行](#安装与运行) · [演示流程](#演示流程) · [版本与分支](#版本与分支) · [文档导航](#文档导航)
 
-下方保留逐阶段历史记录；历史报告的本机 artifacts 链接不包含在公开源码包中。本候选包的安装和验收以以上入口为准。
+## 核心能力
 
-## 本地业务扩展：两周验收入口
+| 能力 | 实现与用途 |
+| --- | --- |
+| 业务结果检查 | 独立读取 Ticket 的 SQLite 数据库或 Gitea 的只读 API，验证资源数量、字段和操作归属 |
+| 故障注入 | 覆盖响应丢失、短暂不可用、权限拒绝等场景；网络实验通过独立 HTTP 代理执行 |
+| 修复前后对比 | 在相同案例下比较缺陷服务与幂等修复服务，保留业务失败及其证据 |
+| MCP 接入 | 使用官方 MCP Python SDK，通过 stdio 连接 Ticket HTTP 与 Gitea 业务工具 |
+| 中断与恢复验证 | 使用 PostgreSQL 检查点、预算和租约，验证 worker 中断后的恢复与业务确认 |
+| 可视化报告 | 展示运行历史、逐项检查、事件、版本对比和恢复详情，支持下载报告 |
+| 自动化验收 | 提供 Windows 核心测试与前端构建、Linux 容器网络与恢复验收，以及已知重复缺陷门禁 |
 
-**首次使用请看 [AgentCheck-Biz 快速开始](docs/quickstart.md)**：无需密钥即可复现“提交成功但响应丢失 → 重试产生业务重复 → 幂等修复”，并在 `/business` 查看数据库、事件、检查和版本对比。这份快速开始演示 V1 本地工具；D20 已新增两对象的真实业务 MCP 接入，见下方第二版入口。
+默认演示使用确定性客户端，无需模型密钥，不发送模型请求。真实模型工作台和模型实验需单独配置。
 
-**第二版进度**：D16–D33 已完成。D33 无模型 CI 已取得真实远程绿灯、重复写入回归红灯及恢复后的绿灯；Windows 202 项测试和前端构建通过，Linux 固定容器的 3 个网络实验、4 个恢复场景通过；独立源码包本机复现通过，零付费模型请求。[一键复现说明](docs/v2/reproduce.md)；运行 `python scripts/verify_v2.py`。D34 已完成本轮获授权真实模型实验与只读证据复查：6 PASS，16 次请求，11,038 已知 tokens；未触发创建重试的样本不作去重有效性结论。见 [D34 实施记录](docs/v2/d34.md)与[完整请求预览](docs/v2/d34-preview.md)。
+## 版本与分支
 
-D13 新增固定预算实验入口 `python -m agentcheck_biz.experiment`，默认只预览；`--live` 才发送付费请求。固定 F1/F2/F3 × A/B/C，共 9 次运行，最多 45 次请求，逐样本保留轨迹和所有结论。D14 的自动验收入口仍为下方 `verify_clean.py`；项目所有者已完成真实试用，滚动与旧接口 422 问题处理后确认测试无问题、T03/T07 可理解，见 [试用反馈](docs/day14-user-feedback.md)。最新证据见 [D13 / D14 记录](docs/day13-day14-walkthrough.md)，贡献归属见 [UPSTREAM.md](UPSTREAM.md)。
+截至 2026-09-15，远程仓库有三个分支。它们保存不同阶段的代码，不需要同时运行。
 
-D10 历史验收已在同机 Windows 的新源码副本、新 Python 虚拟环境和新前端安装中通过：当时 75 项自动化测试、核心案例 4 PASS、完整修复版 12 PASS；缺陷版保留 4 FAIL。前端重建与真实 HTTP 运行 / 报告下载通过，未复制 `.env` 或运行数据，未发送新模型请求。最新测试数量见 D13 / D14 记录。
+| 分支 / 标签 | 当前用途 | 演示选择 |
+| --- | --- | --- |
+| `main` | 默认分支，仍停留在上游基线 `2b89d2c`，尚未包含 V2 候选交付 | 不用于本项目的 V2 业务演示 |
+| `ci-validation` | D33 阶段的 CI 验证分支，保留自动化验收与回归红绿灯的历史证据 | 用于查阅历史验收 |
+| `release-candidate` | 当前 V2 候选交付分支，包含安装、演示、恢复页面和服务生命周期入口，以及后续文档维护 | **查看最新说明与候选代码** |
+| `v2.0.0-rc.1`（标签） | 固定在已验收的候选提交 `852b039`；后续文档维护不移动此标签 | **推荐用于可复现演示** |
+
+分支用于隔离开发和保留阶段成果，后续提交会推动分支向前；标签用于标记某次发布。`rc.1` 表示第一个发布候选版，目前尚未宣称正式稳定版本。
+
+后续维护建议：完成候选验收与试用后，将交付改动合并到 `main`，让默认分支成为对外入口；开发改动通过短期分支和 Pull Request 合入，阶段版本用标签留存。这是后续维护建议，不表示当前已完成合并。
+
+## 安装与运行
+
+### 1. 准备环境与源码
+
+以下命令适用于 **Windows PowerShell**。候选版已验证的工具版本为：
+
+| 工具 | 验证版本 / 说明 |
+| --- | --- |
+| Python | 3.10.11 |
+| Node.js / npm | 22.19.0 / 10.9.3 |
+| Git | 使用下方克隆命令时需要；也可下载源码包 |
+| PostgreSQL / Gitea | 由项目脚本准备固定版本，本地演示逐场景启动 |
+
+首次准备需要联网下载依赖和二进制；准备完成后的业务实验只访问本机服务。建议为演示预留 4 GB 内存和 4 GB 磁盘，实际需求随运行产物增加。Linux 网络与恢复验收见 [容器复现说明](docs/v2/reproduce.md)。
+
+在一个新目录获取固定演示版本：
 
 ```powershell
-# Windows + Python 3.10 + Node.js/npm；需联网下载锁定依赖
-python scripts/verify_clean.py
+git clone --branch v2.0.0-rc.1 --depth 1 https://github.com/JayusChi/AgentCheck-Biz.git AgentCheck-Biz-demo
+Set-Location AgentCheck-Biz-demo
 ```
 
-脚本为每次验收建立独立目录并打印 `acceptance.json` 路径。手动安装、五分钟演示和适用边界见 [D10 跟读说明](docs/day10-walkthrough.md)、[验收记录](docs/day10-results.json) 与 [第二周复盘](docs/week2-review.md)。下方上游工作台安装方式及模型配置仍保留。
+按标签克隆后 Git 会处于 detached HEAD（固定提交）状态，可直接安装和运行。如需修改代码，先创建自己的开发分支。也可从 [RC1 发布页](https://github.com/JayusChi/AgentCheck-Biz/releases/tag/v2.0.0-rc.1) 下载源码包并解压到新目录。后续命令均在项目根目录执行。
 
-## Layout
+### 2. 安装依赖
 
-- `agentcheck/` — comparison engine, fault injection, deterministic pass/fail scoring, LLM-judge diagnostics
-- `dashboard/` — FastAPI backend + React frontend
-- `agent_specs/` — bundled example specs
-- `templates/` — 120-scenario suite
-- `experiments/` — experiment runners + annotation UI
-- `results/` — experiment outputs
-- `dashboard/seed/agentcheck.db` — precomputed comparisons for **Explore examples**
-
-## Setup
-
-```bash
-cd AgentCheck
+```powershell
 python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-pip install -r dashboard/requirements.txt
-cp .env.example .env
-# Edit .env — see that file for workbench keys and multi-model experiment keys
+.\.venv\Scripts\python.exe -m pip install -r requirements-acceptance.txt -r requirements-persistence.txt
+.\.venv\Scripts\python.exe scripts/fetch_postgres.py
+.\.venv\Scripts\python.exe scripts/fetch_gitea.py
 ```
 
-Frontend (development mode):
-
-```bash
-cd dashboard/frontend
-npm install
-```
-
-## Running the workbench
-
-### Development
-
-Terminal 1 — backend:
-
-```bash
-source .venv/bin/activate
-PYTHONPATH=. uvicorn dashboard.api.main:app --reload --port 8000
-```
-
-Terminal 2 — frontend:
-
-```bash
-cd dashboard/frontend
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-### Single-server
-
-```bash
-source .venv/bin/activate
-PYTHONPATH=. uvicorn dashboard.api.main:app --port 8000
-```
-
-Open [http://localhost:8000](http://localhost:8000). **Explore examples** works from the seed database without API keys.
-
-## Experiments and results
-
-| Results dir | Study |
-|-------------|-------|
-| `results/injection_validation/` | Injection validation |
-| `results/fixed_response_repeatability/` | Fixed-response repeatability |
-| `results/judge_repeatability/` | Judge repeatability |
-| `results/comparative_profiling/` | Comparative agent profiling |
-| `results/mitigation_impact/` | Mitigation impact |
-
-The suite is **120** scenarios (10 per fault type). Experiment runners use `evaluate.py` (MCP comparison → deterministic fault-handling checks → optional LLM judge). Summaries live in each results directory as `summary.json`.
-
-### Annotation UI
-
-Self-contained HTML annotator (no server):
-
-```bash
-open experiments/annotation_ui.html
-```
-
-Regenerate from injection-validation traces:
-
-```bash
-python experiments/export_annotation_ui.py --html-only
-```
-
-### Re-run experiments
-
-Requires API keys (see `.env.example`). Comparative profiling and mitigation impact need keys for every agent you run:
-
-```bash
-python experiments/run_injection_validation.py
-python experiments/run_fixed_response_repeatability.py
-python experiments/run_judge_repeatability.py
-python experiments/run_comparative_profiling.py
-python experiments/run_mitigation_impact.py
-```
-
-Default judge model is `claude-haiku-4-5-20251001`. Use `--no-judge` for deterministic pass/fail without diagnostic labels.
-
-## Environment variables
-
-### 阿里云百炼（本地工作台）
-
-在根目录 `.env` 中设置 `DASHSCOPE_API_KEY` 和 `DASHSCOPE_BASE_URL`。
-地址使用百炼控制台导出的 `openAiCompatible` 值，须与密钥所在地域、业务空间匹配。
-密钥只放在后端 `.env`，不要写入前端变量或提交到 Git。
-
-如需同时使用百炼做辅助评分，增加：
-
-```dotenv
-AGENTCHECK_JUDGE_MODEL=qwen3.7-max
-AGENTCHECK_JUDGE_PROVIDER=bailian
-```
-
-重启后端，刷新前端，在“连接 MCP 服务器”中选择“通义千问 3.7 Max（阿里云百炼）”。
-首次可选“内置演示 MCP”及“原生工具调用”，保持任务和 A1 超时配置，点击“运行对比”。
-被测模型与辅助评分模型均为 Qwen 时，评分结果不能视为独立模型的复核。
-若返回 `Access denied by API-Key restrictions`，检查百炼控制台该密钥的模型访问范围、IP 白名单等限制。
-
-原有服务商配置如下：
-
-Copy `.env.example` to `.env` and fill in keys. Live workbench runs need `OPENAI_API_KEY` (agent) and `ANTHROPIC_API_KEY` (Claude judge). Multi-agent experiment re-runs also need provider keys for Gemini, DeepSeek, and Llama — see `.env.example`.
-
-## 本地业务结果验证扩展（D3 / D4）
-
-基于 AgentCheck 新增的工单验证示例：在事务提交后模拟工具响应丢失，独立读取 SQLite 判定业务结果，再用服务端幂等版本复测。当前通过源码根目录运行，使用受控客户端，不调用模型；尚未接入上游 MCP 执行器；D9 已新增独立业务报告页面，见下文。
+### 3. 生成演示结果并启动页面
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 -m examples.ticket_agent.d3_demo
-.\.venv\Scripts\python.exe -X utf8 -m examples.ticket_agent.d4_demo
-.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests/business -p 'test_*.py' -v
+.\.venv\Scripts\python.exe -X utf8 scripts/delivery.py demo --directory artifacts/delivery
+.\.venv\Scripts\python.exe -X utf8 scripts/delivery.py serve --directory artifacts/delivery --port 8035
 ```
 
-D4 预期对照：正常原版本 PASS（本次操作 1 张工单）；故障原版本 FAIL（2 张）；相同故障下的幂等版本 PASS（1 张）。每阶段独立建库，保存 JSON 检查、事件、真实数据库及可阅读报告；路径由命令打印。无关初始工单另行检查，不计入本次操作数量。
+`demo` 会安装前端锁定依赖并构建页面，运行核心测试、网络与恢复实验、A/B/C 对照和重复缺陷门禁，生成本次演示数据。完整过程需要数分钟，建议在讲解前完成；确认成功后再运行 `serve`。
 
-单独运行 `d4_demo --phase B` 返回业务失败退出码 1，`--phase C` 返回通过退出码 0；完整 A/B/C 命令在预期对照全部复现时返回 0，仍保留 B 的业务 FAIL。
+打开 **[业务结果验证页面](http://127.0.0.1:8035/business)**。服务在前台运行，按 `Ctrl+C` 可退出。重复执行 `demo` 时使用新的目录，例如 `artifacts/delivery-2`；`serve`、`health` 和 `stop` 应使用同一个目录。
 
-阅读 [D3 跟读说明](docs/day3-walkthrough.md)、[D4 跟读说明](docs/day4-walkthrough.md) 和 [来源与贡献边界](UPSTREAM.md)。
+### 4. 检查与停止服务
 
-## D5 真实模型业务入口（已实测）
-
-已增加百炼原生工具调用适配器，复用 D4 工单服务、故障和独立检查。模型可以创建或查询当前业务请求的工单；本地上下文、工具调用预算和模型请求上限由程序控制。
-
-D5 验收时 40 项离线检查通过。2026-09-08 获得明确联网授权后，`qwen3.7-max` 正常及 F1 两组真实业务运行均 PASS，共 5 次模型请求、已知 3297 token。故障组在结果未知后主动查询已提交工单，没有再次创建。首轮连接 ERROR 也保留在完整记录中。见 [D5 实测结果](docs/day5-results.md)。
-
-使用已配置并获授权的模型服务时，可在源码根目录运行：
+在项目根目录打开另一个终端：
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 -m examples.ticket_agent.d5_demo --phase clean
-.\.venv\Scripts\python.exe -X utf8 -m examples.ticket_agent.d5_demo --phase faulted
+.\.venv\Scripts\python.exe scripts/delivery.py health --directory artifacts/delivery
+.\.venv\Scripts\python.exe scripts/delivery.py stop --directory artifacts/delivery
 ```
 
-上述命令使用现有百炼凭据，会发送真实模型请求。详细参数、发送数据及当前状态见 [D5 跟读说明](docs/day5-walkthrough.md)、[请求预览](docs/d5-request-preview.json) 和 [第一周复盘](docs/week1-review.md)。
+停止后可重新运行 `serve` 查看已有结果。安装排错、组件生命周期及源码包校验见 [完整交付说明](docs/v2/delivery.md)。
 
-## D6 / D7 案例 CLI 与三类故障（已完成）
+## 演示流程
 
-D6 / D7 验收时 62 项本地测试通过。新增严格案例校验、单例 / 套件命令、运行中状态持久化、只读复查，以及提交前短暂不可用 F2 和持续权限拒绝 F3。F2 有限重试后创建一张工单；F3 拒绝后停止且数据库不变，两者采用不同业务通过标准。
+核心故事是：**提交成功 → 响应丢失 → 重试 → 独立检查业务结果 → 验证幂等修复。** 幂等处理使同一业务操作被重复提交时仍只创建一张工单。
+
+| 对照 | 服务与故障 | 预期工单数 | 业务结论 |
+| --- | --- | --- | --- |
+| A：正常对照 | 缺陷服务，无故障 | 1 | PASS |
+| B：复现缺陷 | 缺陷服务，提交后响应丢失并重试 | 2 | FAIL |
+| C：验证修复 | 幂等服务，相同故障并重试 | 1 | PASS |
+
+1. 在 `/business` 选择 **T03 / Scripted / unsafe**，运行并查看两张工单及 FAIL 检查。
+2. 保持案例与执行方式不变，选择 **fixed** 再运行，查看一张工单及 PASS 检查。
+3. 对比两次运行，解释提交、故障与重试的事件顺序，并下载报告。
+4. 展示 `delivery.json` 中的真实网络 A/B/C 对照，以及页面中的恢复详情。
+
+页面 T03 使用本地函数级故障；`delivery.py demo` 的 A/B/C 对照使用真实 MCP、HTTP 代理和独立提交确认后的断连。介绍时应说明两者的执行层次。完整讲解顺序见 [五分钟演示脚本](docs/v2/demo-five-minutes.md)。
+
+**B 的 FAIL 是预期保留的业务缺陷。** 演示验收通过表示 A/B/C 现象与证据符合预期，并不表示三个业务运行都成功。权限拒绝等案例则可能以“停止且不创建”为正确结果；PASS 始终取决于案例契约。
+
+## 验收与运行产物
+
+2026-09-15 的交付记录包含 224 项核心测试、前端构建、3 个网络场景、4 个恢复场景及 A/B/C 对照通过；已知重复缺陷被固定发布契约拒绝。本轮没有新增模型请求。这些是已记录的候选验收结果，当前运行结果应以新生成的报告为准。
+
+需要独立执行自动验收时，在完成上述依赖准备后运行：
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 -m agentcheck_biz.cli validate --cases cases/tickets/core
-.\.venv\Scripts\python.exe -X utf8 -m agentcheck_biz.cli suite --cases cases/tickets/core --agent scripted --app-version fixed
+.\.venv\Scripts\python.exe -X utf8 scripts/verify_v2.py
 ```
 
-幂等版本的正常 / F1 / F2 / F3 四个核心案例均 PASS；缺陷版本在 F1 下产生重复并使套件返回 FAIL。所有结论保留在 `suite.json`，可从同目录 `suite.md` 查看各运行。退出码为 PASS=0、FAIL=1、INCONCLUSIVE=2、ERROR=3，错误配置在执行前被拒绝。
+`delivery.py demo` 已包含这一步，普通演示无需重复执行。仅运行核心测试与前端构建可添加 `--scope core`。CI 定义见 [verify-v2.yml](.github/workflows/verify-v2.yml)，历史记录见 [证据索引](docs/v2/history.md)。
 
-本次未发送新的模型请求。完整命令、案例规则、运行状态、实测证据和学习顺序见 [D6 / D7 跟读说明](docs/day6-day7-walkthrough.md)。该目录保留 4 个核心案例；D8 的完整 12 案例套件见下文。
+| 相对 `artifacts/delivery/` 的路径 | 内容 |
+| --- | --- |
+| `delivery.json` | 本次演示总结果、A/B/C 观察及交付状态 |
+| `ci/public/` | 可分享的 JSON、Markdown 和 JUnit 验收报告 |
+| `controls/` | 正常、重复缺陷、修复三组证据与独立复查 |
+| `negative-gate/` | 已知重复缺陷被拒绝的预期 FAIL |
+| `recovery-index.json` | 本次恢复证据索引 |
+| `business-api/` | 页面运行历史、业务观察和报告 |
+| `server.json` | 本次平台实例的生命周期记录 |
 
-## D8 / D9 完整案例与业务报告页面（已完成）
+业务命令及验收器的状态为 `PASS=0`、`FAIL=1`、`INCONCLUSIVE=2`、`ERROR=3`。证据不足与执行错误均不能算作通过。数据库、私有日志和运行时配置可能含测试凭据，仅保存在本机；发布范围见 [交付说明](docs/v2/delivery.md)。
 
-完整套件位于 `cases/tickets/full/`：修复版 **12 PASS**，缺陷版 **8 PASS / 4 FAIL**，失败覆盖请求重放、丢响应重试、内容冲突和并发创建。75 项自动化测试与前端构建通过。
+## 开发与模型配置
+
+前后端分别开发时，使用已安装依赖的环境，在项目根目录启动后端：
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 -m agentcheck_biz.cli suite --cases cases/tickets/full --app-version fixed
-.\.venv\Scripts\python.exe -X utf8 -m uvicorn dashboard.api.main:app --host 127.0.0.1 --port 8019
+.\.venv\Scripts\python.exe -X utf8 -m uvicorn dashboard.api.main:app --reload --port 8000
 ```
 
-打开 [本地业务报告页面](http://127.0.0.1:8019/business)，选择案例和版本后运行。页面显示执行阶段、业务结论、逐项期望 / 实际、事件及原始观察，可下载报告。API 使用单个受控子进程，45 秒硬超时，忙时拒绝重复提交；按单个 Uvicorn worker 运行。
-
-这一入口仅运行确定性案例，不调用模型。完整案例表、检查器负例、API 说明、实测报告与学习步骤见 [D8 / D9 跟读说明](docs/day8-day9-walkthrough.md)。
-
-## D11 / D12 运行对比与 LangGraph（已完成）
-
-业务页面新增同案例左右对比，列出变化 / 一致配置及每项业务结果；多项变化、未命中故障或证据不足时阻止单项归因。新增实际 LangGraph 状态图执行方式，复用原工具预算和独立检查器，并保存真实节点 / 路由事件。
-
-88 项测试与前端构建通过。LangGraph 支持 T01–T08、T11：修复版 9 PASS；缺陷版 6 PASS / 3 FAIL。T09、T10、T12 继续使用 Scripted；不支持的组合会被拒绝。本次没有调用付费模型。
+另开终端启动前端：
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 -m agentcheck_biz.cli suite --cases cases/tickets/core --agent langgraph --app-version fixed
-.\.venv\Scripts\python.exe -X utf8 -m uvicorn dashboard.api.main:app --host 127.0.0.1 --port 8021
+Set-Location dashboard/frontend
+npm.cmd ci --no-audit --no-fund
+npm.cmd run dev
 ```
 
-打开 [业务对比页面](http://127.0.0.1:8021/business)。按 [D11 / D12 学习说明](docs/day11-day12-walkthrough.md) 先固定执行方式比较服务版本，再固定服务版本比较适配器。兼容范围、CLI / API、状态图和原始证据见说明及 [验收索引](docs/day11-day12-results.json)。
+访问 [开发页面](http://localhost:5173/business)。Vite 将 `/api` 转发到后端的 8000 端口；完整恢复演示使用前述 `delivery.py serve` 入口。
 
-## License
+如需使用真实模型工作台，将 [.env.example](.env.example) 复制为 `.env`，按所选模型服务商填写密钥与端点后重启后端。百炼使用 `DASHSCOPE_API_KEY` / `DASHSCOPE_BASE_URL`；其他服务商和辅助评分配置见示例文件。密钥仅存放在后端环境中，不提交到 Git。
 
-MIT — see [LICENSE](LICENSE).
+真实模型运行会发送请求并可能产生费用。模型实验的计划、预算和证据边界见 [D34 请求预览](docs/v2/d34-preview.md) 与 [D34 实验记录](docs/v2/d34.md)。上游实验脚本保留在 `experiments/`，其结果与本项目业务验收分别解读。
+
+## 项目结构
+
+```text
+agentcheck/           上游 Agent 执行、故障注入与评分引擎
+agentcheck_biz/       业务契约、独立观察、网络故障、恢复及交付逻辑
+dashboard/           FastAPI 后端与 React / TypeScript 前端
+examples/            Ticket、Gitea、MCP 等业务接入与演示
+cases/               业务案例与运行配置
+schema/              案例、规则及验收清单的 JSON Schema
+scripts/             依赖准备、验收、打包与演示入口
+tests/               业务及 V2 自动化测试
+ci/                  固定验收契约、源码白名单与容器配置
+docs/                安装、设计、演示和阶段验收记录
+experiments/         上游研究实验及业务实验相关材料
+artifacts/           本机生成的运行结果，不随公共源码发布
+```
+
+## 适用范围与限制
+
+- 当前交付为本地可演示的候选版，独立第三方试用尚未完成，不声明生产可靠性。
+- Scripted / LangGraph 确定性客户端用于验证执行机制和业务契约，不代表模型智能评测。
+- Gitea 通过独立只读 API 观察；缺少充分写入证据时保留待核实状态，不推断内部数据库提交，也不保证端到端 exactly-once（恰好一次）。
+- D34 历史模型实验为 6 个槽位、16 次请求。故障样本通过查询恢复，未触发创建重试，不能据此得出幂等修复提高模型成功率的结论。
+- 上游的执行器、模型诊断和研究结果与本地业务扩展分别归属，详见 [来源与贡献边界](UPSTREAM.md)。
+
+## 文档导航
+
+| 文档 | 用途 |
+| --- | --- |
+| [候选版交付说明](docs/v2/delivery.md) | 完整安装、演示、健康检查、停止与排错 |
+| [五分钟演示](docs/v2/demo-five-minutes.md) | 展示顺序与证据讲解 |
+| [候选交付记录](docs/v2/d35.md) / [结果索引](docs/v2/d35-results.json) | 本轮验收范围和已知保留项 |
+| [独立试用说明](docs/v2/trial.md) | 试用步骤与反馈模板 |
+| [自动化与容器复现](docs/v2/reproduce.md) | Windows / Linux 验收与 CI 输出 |
+| [业务 MCP 接入](docs/v2/mcp-integration.md) | Ticket 与 Gitea 的协议接线与兼容范围 |
+| [历史证据索引](docs/v2/history.md) | D33 CI 与 D34 模型实验 |
+| [V1 本地快速开始](docs/quickstart.md) | 早期函数级工单演示；范围以该阶段为准 |
+| [来源与贡献边界](UPSTREAM.md) | 上游归属及业务扩展记录 |
+
+逐日开发和历史实验保留在 `docs/`，其中的测试数量与能力描述对应记录当时的版本；部分原始产物只保存在项目所有者本机。
+
+## 贡献
+
+提交问题时请注明版本或提交号、操作系统、复现步骤、预期与实际结果，并附脱敏后的公开报告。代码改动请说明影响范围和验证结果；新增发布源码时同步检查 `ci/source-files.json` 白名单。
+
+## 许可证与致谢
+
+本项目基于 [aritra741/AgentCheck](https://github.com/aritra741/AgentCheck)，保留上游 Git 历史与版权声明。上游研究项目为 *AgentCheck: A Reproduce–Intervene–Mitigate Workbench for LLM Agents over MCP*。
+
+采用 [MIT License](LICENSE)。上游与本地贡献说明见 [UPSTREAM.md](UPSTREAM.md)。
